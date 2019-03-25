@@ -1,0 +1,158 @@
+package io.global.chat;
+
+import io.datakernel.async.Promise;
+import io.datakernel.codec.StructuredCodec;
+import io.datakernel.exception.ParseException;
+import io.datakernel.http.*;
+import io.datakernel.ot.OTCommit;
+import io.datakernel.ot.OTNode.FetchData;
+import io.datakernel.ot.OTNodeImpl;
+import io.datakernel.ot.OTSystem;
+import io.global.common.PrivKey;
+import io.global.ot.api.CommitId;
+import io.global.ot.api.RepoID;
+import io.global.ot.client.MyRepositoryId;
+import io.global.ot.client.OTDriver;
+import io.global.ot.client.OTRepositoryAdapter;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static io.datakernel.codec.json.JsonUtils.fromJson;
+import static io.datakernel.codec.json.JsonUtils.toJson;
+import static io.datakernel.http.HttpHeaderValue.ofContentType;
+import static io.datakernel.http.HttpHeaders.CONTENT_TYPE;
+import static io.datakernel.http.HttpMethod.GET;
+import static io.datakernel.http.HttpMethod.POST;
+import static io.datakernel.http.MediaTypes.JSON;
+import static io.datakernel.http.MediaTypes.PLAIN_TEXT;
+import static io.global.ot.api.OTNodeCommand.*;
+import static io.global.ot.util.BinaryDataFormats.REGISTRY;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.*;
+
+public final class DynamicOTNodeServlet<D> implements WithMiddleware {
+	private static final StructuredCodec<CommitId> COMMIT_ID_CODEC = REGISTRY.get(CommitId.class);
+
+	private final MiddlewareServlet servlet;
+	private final OTSystem<D> otSystem;
+	private final OTDriver driver;
+	private final StructuredCodec<D> diffCodec;
+	private final StructuredCodec<FetchData<CommitId, D>> fetchDataCodec;
+	private final Set<RepoID> initialized = new HashSet<>();
+	private final String prefix;
+
+	private DynamicOTNodeServlet(OTDriver driver, OTSystem<D> otSystem, StructuredCodec<D> diffCodec, String prefix) {
+		this.servlet = getServlet();
+		this.diffCodec = diffCodec;
+		this.fetchDataCodec = FetchData.codec(COMMIT_ID_CODEC, diffCodec);
+		this.otSystem = otSystem;
+		this.driver = driver;
+		this.prefix = prefix;
+	}
+
+	public static <D> DynamicOTNodeServlet<D> create(OTDriver driver, OTSystem<D> otSystem, StructuredCodec<D> diffCodec, String prefix) {
+		return new DynamicOTNodeServlet<>(driver, otSystem, diffCodec, prefix);
+	}
+
+	private MiddlewareServlet getServlet() {
+		return MiddlewareServlet.create()
+				.with(GET, "/" + CHECKOUT, request -> getNode(request)
+						.then(OTNodeImpl::checkout)
+						.map(checkoutData -> jsonResponse(fetchDataCodec, checkoutData)))
+				.with(GET, "/" + FETCH, request -> {
+					try {
+						CommitId currentCommitId = fromJson(COMMIT_ID_CODEC, request.getQueryParameter("id"));
+						return getNode(request)
+								.then(node -> node.fetch(currentCommitId))
+								.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
+					} catch (ParseException e) {
+						return Promise.ofException(e);
+					}
+				})
+				.with(GET, "/" + POLL, request -> {
+					try {
+						CommitId currentCommitId = fromJson(COMMIT_ID_CODEC, request.getQueryParameter("id"));
+						return getNode(request)
+								.then(node -> node.poll(currentCommitId))
+								.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
+					} catch (ParseException e) {
+						return Promise.ofException(e);
+					}
+				})
+				.with(POST, "/" + CREATE_COMMIT, request -> request.getBody()
+						.then(body -> {
+							try {
+								FetchData<CommitId, D> fetchData = fromJson(fetchDataCodec, body.getString(UTF_8));
+								return getNode(request)
+										.then(node -> node.createCommit(fetchData.getCommitId(), fetchData.getDiffs(), fetchData.getLevel()))
+										.map(commit -> {
+											assert commit.getSerializedData() != null;
+											return HttpResponse.ok200()
+													.withHeader(CONTENT_TYPE, ofContentType(ContentType.of(PLAIN_TEXT)))
+													.withBody(commit.getSerializedData());
+										});
+							} catch (ParseException e) {
+								return Promise.<HttpResponse>ofException(e);
+							} finally {
+								body.recycle();
+							}
+						}))
+				.with(POST, "/" + PUSH, request -> request.getBody()
+						.then(body -> getNode(request)
+								.then(node -> {
+									try {
+										OTCommit<CommitId, D> commit = ((OTRepositoryAdapter<D>) node.getRepository()).parseRawBytes(body.getArray());
+										return node.push(commit)
+												.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
+									} catch (ParseException e) {
+										return Promise.<HttpResponse>ofException(e);
+									} finally {
+										body.recycle();
+									}
+								})));
+	}
+
+	private static <T> HttpResponse jsonResponse(StructuredCodec<T> codec, T item) {
+		return HttpResponse.ok200()
+				.withHeader(CONTENT_TYPE, ofContentType(ContentType.of(JSON)))
+				.withBody(toJson(codec, item).getBytes(UTF_8));
+	}
+
+	private Promise<OTNodeImpl<CommitId, D, OTCommit<CommitId, D>>> getNode(HttpRequest request) {
+		try {
+			PrivKey privKey = PrivKey.fromString(request.getPathParameter("privKey"));
+			String suffix = request.getPathParameterOrNull("suffix");
+			String repositoryName = prefix + (suffix == null ? "" : ('/' + suffix));
+			RepoID repoID = RepoID.of(privKey, repositoryName);
+
+			MyRepositoryId<D> myRepositoryId = new MyRepositoryId<>(repoID, privKey, diffCodec);
+			OTRepositoryAdapter<D> adapter = new OTRepositoryAdapter<>(driver, myRepositoryId, emptySet());
+			OTNodeImpl<CommitId, D, OTCommit<CommitId, D>> otNode = OTNodeImpl.create(adapter, otSystem);
+			if (suffix != null || initialized.contains(repoID)) {
+				return Promise.of(otNode);
+			} else {
+				return driver.getHeads(repoID)
+						.then(heads -> {
+							if (!heads.isEmpty()) {
+								return Promise.complete();
+							}
+
+							OTCommit<CommitId, D> rootCommit = driver.createCommit(0, myRepositoryId, emptyMap(), 1);
+							return driver.push(myRepositoryId, rootCommit)
+									.then($ -> driver.updateHeads(myRepositoryId, singleton(rootCommit.getId()), emptySet()))
+									.then($ -> driver.saveSnapshot(myRepositoryId, rootCommit.getId(), emptyList()));
+						})
+						.map($ -> otNode)
+						.whenResult($ -> initialized.add(repoID));
+			}
+		} catch (ParseException e) {
+			return Promise.ofException(e);
+		}
+	}
+
+	@Override
+	public MiddlewareServlet getMiddlewareServlet() {
+		return servlet;
+	}
+}
