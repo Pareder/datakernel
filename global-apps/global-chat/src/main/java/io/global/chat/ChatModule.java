@@ -13,7 +13,10 @@ import io.datakernel.http.AsyncHttpClient;
 import io.datakernel.http.AsyncHttpServer;
 import io.datakernel.http.IAsyncHttpClient;
 import io.datakernel.http.MiddlewareServlet;
-import io.global.chat.friendlist.FriendsListOperation;
+import io.global.chat.chatroom.ChatRoomOperation;
+import io.global.chat.chatroom.RoomInitializerServlet;
+import io.global.chat.friendlist.FriendListOperation;
+import io.global.chat.roomlist.RoomListOperation;
 import io.global.common.SimKey;
 import io.global.ot.client.OTDriver;
 import io.global.ot.server.GlobalOTNodeImpl;
@@ -47,11 +50,16 @@ public final class ChatModule extends AbstractModule {
 	@Provides
 	@Singleton
 	MiddlewareServlet provideMainServlet(
-			InitializerServlet initializerServlet,
-			DynamicOTNodeServlet<FriendsListOperation> friendsListServlet) {
+			RoomInitializerServlet roomInitializerServlet,
+			DynamicOTNodeServlet<FriendListOperation> friendsListServlet,
+			DynamicOTNodeServlet<RoomListOperation> roomListServlet,
+			DynamicOTNodeServlet<ChatRoomOperation> roomServlet
+	) {
 		return MiddlewareServlet.create()
-				.with("/initialize/:privKey", initializerServlet)
-				.with("/friendsList/:privKey", friendsListServlet);
+				.with("/friendList/:privKey", friendsListServlet)
+				.with("/roomList/:privKey", roomListServlet)
+				.with("/room/:suffix/:privKey", roomServlet)
+				.with("/createRoom/:privKey", roomInitializerServlet);
 	}
 
 	@Provides
@@ -75,11 +83,5 @@ public final class ChatModule extends AbstractModule {
 	OTDriver provideDriver(Eventloop eventloop, GlobalOTNodeImpl node, Config config) {
 		SimKey simKey = config.get(ofSimKey(), "credentials.simKey", DEMO_SIM_KEY);
 		return new OTDriver(node, simKey);
-	}
-
-	@Provides
-	@Singleton
-	InitializerServlet provideInitializerSrevlet(OTDriver driver) {
-		return new InitializerServlet(driver);
 	}
 }

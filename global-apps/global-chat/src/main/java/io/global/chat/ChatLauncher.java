@@ -6,8 +6,9 @@ import io.datakernel.config.ConfigModule;
 import io.datakernel.http.AsyncHttpServer;
 import io.datakernel.launcher.Launcher;
 import io.datakernel.service.ServiceGraphModule;
-import io.global.chat.chatrooms.ChatRoomsModule;
-import io.global.chat.friendlist.FriendsListModule;
+import io.global.chat.chatroom.RoomModule;
+import io.global.chat.friendlist.FriendListModule;
+import io.global.chat.roomlist.RoomListModule;
 
 import java.util.Collection;
 
@@ -35,9 +36,10 @@ public final class ChatLauncher extends Launcher {
 								.override(Config.ofProperties(PROPERTIES_FILE, true))
 								.override(ofProperties(System.getProperties()).getChild("config")))
 						.printEffectiveConfig(),
+				new RoomModule(),
 				new ChatModule(),
-				new FriendsListModule(),
-				new ChatRoomsModule()
+				new FriendListModule(),
+				new RoomListModule()
 		);
 	}
 
