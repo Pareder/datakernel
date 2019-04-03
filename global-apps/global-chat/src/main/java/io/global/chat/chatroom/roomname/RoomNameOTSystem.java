@@ -5,6 +5,7 @@ import io.datakernel.ot.OTSystemImpl;
 
 import static io.datakernel.ot.TransformResult.*;
 import static io.datakernel.util.Preconditions.checkState;
+import static io.global.chat.chatroom.roomname.ChangeRoomName.changeName;
 import static java.util.Collections.singletonList;
 
 public final class RoomNameOTSystem {
@@ -12,18 +13,22 @@ public final class RoomNameOTSystem {
 		throw new AssertionError();
 	}
 
-	public static OTSystem<SetRoomName> createOTSystem() {
-		return OTSystemImpl.<SetRoomName>create()
-				.withEmptyPredicate(SetRoomName.class, SetRoomName::isEmpty)
-				.withInvertFunction(SetRoomName.class, op -> singletonList(new SetRoomName(op.getNext(), op.getPrev())))
+	public static OTSystem<ChangeRoomName> createOTSystem() {
+		return OTSystemImpl.<ChangeRoomName>create()
+				.withEmptyPredicate(ChangeRoomName.class, ChangeRoomName::isEmpty)
+				.withInvertFunction(ChangeRoomName.class, op -> singletonList(changeName(op.getNext(), op.getPrev(), op.getTimestamp())))
 
-				.withSquashFunction(SetRoomName.class, SetRoomName.class, (first, second) -> new SetRoomName(first.getPrev(), second.getNext()))
-				.withTransformFunction(SetRoomName.class, SetRoomName.class, (left, right) -> {
+				.withSquashFunction(ChangeRoomName.class, ChangeRoomName.class, (first, second) -> changeName(first.getPrev(), second.getNext(), second.getTimestamp()))
+				.withTransformFunction(ChangeRoomName.class, ChangeRoomName.class, (left, right) -> {
 					checkState(left.getPrev().equals(right.getPrev()), "Previous values of left and right operation should be equal");
+					if (left.getTimestamp() > right.getTimestamp())
+						return right(changeName(right.getNext(), left.getNext(), left.getTimestamp()));
+					if (left.getTimestamp() < right.getTimestamp())
+						return left(changeName(left.getNext(), right.getNext(), right.getTimestamp()));
 					if (left.getNext().compareTo(right.getNext()) > 0)
-						return left(new SetRoomName(left.getNext(), right.getNext()));
+						return right(changeName(right.getNext(), left.getNext(), left.getTimestamp()));
 					if (left.getNext().compareTo(right.getNext()) < 0)
-						return right(new SetRoomName(right.getNext(), left.getNext()));
+						return left(changeName(left.getNext(), right.getNext(), right.getTimestamp()));
 					return empty();
 				});
 	}

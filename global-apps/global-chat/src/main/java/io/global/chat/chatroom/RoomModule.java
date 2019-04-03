@@ -4,11 +4,11 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.datakernel.eventloop.Eventloop;
-import io.datakernel.ot.OTSystem;
 import io.global.chat.DynamicOTNodeServlet;
 import io.global.ot.client.OTDriver;
 
-import static io.global.chat.Utils.CHAT_ROOM_CODEC;
+import static io.global.chat.Utils.createMergedOTSystem;
+import static io.global.chat.chatroom.ChatMultiOperation.CODEC;
 
 public final class RoomModule extends AbstractModule {
 	public static final String ROOM_PREFIX = "room";
@@ -21,9 +21,7 @@ public final class RoomModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	DynamicOTNodeServlet<ChatRoomOperation> provideServlet(Eventloop eventloop, OTDriver driver) {
-		OTSystem<ChatRoomOperation> otSystem = null;
-		// TODO eduard: merge MessageOTSystem, ParticipantsOTSystem, RoomNameOTSystem into one OT System
-		return DynamicOTNodeServlet.create(eventloop, driver, otSystem, CHAT_ROOM_CODEC, ROOM_PREFIX);
+	DynamicOTNodeServlet<ChatMultiOperation> provideServlet(Eventloop eventloop, OTDriver driver) {
+		return DynamicOTNodeServlet.create(eventloop, driver, createMergedOTSystem(), CODEC, ROOM_PREFIX);
 	}
 }

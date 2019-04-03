@@ -13,7 +13,7 @@ import io.datakernel.http.AsyncHttpClient;
 import io.datakernel.http.AsyncHttpServer;
 import io.datakernel.http.IAsyncHttpClient;
 import io.datakernel.http.MiddlewareServlet;
-import io.global.chat.chatroom.ChatRoomOperation;
+import io.global.chat.chatroom.ChatMultiOperation;
 import io.global.chat.chatroom.RoomInitializerServlet;
 import io.global.chat.friendlist.FriendListOperation;
 import io.global.chat.roomlist.RoomListOperation;
@@ -53,7 +53,7 @@ public final class ChatModule extends AbstractModule {
 			RoomInitializerServlet roomInitializerServlet,
 			DynamicOTNodeServlet<FriendListOperation> friendsListServlet,
 			DynamicOTNodeServlet<RoomListOperation> roomListServlet,
-			DynamicOTNodeServlet<ChatRoomOperation> roomServlet
+			DynamicOTNodeServlet<ChatMultiOperation> roomServlet
 	) {
 		return MiddlewareServlet.create()
 				.with("/friendList/:privKey", friendsListServlet)

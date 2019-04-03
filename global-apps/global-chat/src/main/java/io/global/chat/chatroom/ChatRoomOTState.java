@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-public final class ChatRoomOTState implements OTState<ChatRoomOperation> {
+public final class ChatRoomOTState implements OTState<ChatMultiOperation> {
 	private String roomName;
 	private Set<PubKey> participants;
 	private Set<Message> messages;
@@ -32,8 +32,10 @@ public final class ChatRoomOTState implements OTState<ChatRoomOperation> {
 	}
 
 	@Override
-	public void apply(ChatRoomOperation op) {
-		op.apply(this);
+	public void apply(ChatMultiOperation multiOperation) {
+		multiOperation.getMessageOps().forEach(op -> op.apply(this));
+		multiOperation.getParticipantsOps().forEach(op -> op.apply(this));
+		multiOperation.getRoomNameOps().forEach(op -> op.apply(this));
 	}
 
 	public String getRoomName() {
@@ -42,6 +44,10 @@ public final class ChatRoomOTState implements OTState<ChatRoomOperation> {
 
 	public Set<PubKey> getParticipants() {
 		return participants;
+	}
+
+	public Set<Message> getMessages() {
+		return messages;
 	}
 
 	public void addParticipants(Set<PubKey> toAdd) {
