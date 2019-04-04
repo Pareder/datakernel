@@ -15,12 +15,6 @@ public final class RoomModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	RoomInitializerServlet provideRoomInitializerServlet(OTDriver driver) {
-		return new RoomInitializerServlet(driver);
-	}
-
-	@Provides
-	@Singleton
 	DynamicOTNodeServlet<ChatMultiOperation> provideServlet(Eventloop eventloop, OTDriver driver) {
 		return DynamicOTNodeServlet.create(eventloop, driver, createMergedOTSystem(), CODEC, ROOM_PREFIX);
 	}

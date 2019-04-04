@@ -14,7 +14,6 @@ import io.datakernel.http.AsyncHttpServer;
 import io.datakernel.http.IAsyncHttpClient;
 import io.datakernel.http.MiddlewareServlet;
 import io.global.chat.chatroom.ChatMultiOperation;
-import io.global.chat.chatroom.RoomInitializerServlet;
 import io.global.chat.friendlist.FriendListOperation;
 import io.global.chat.roomlist.RoomListOperation;
 import io.global.common.SimKey;
@@ -50,7 +49,6 @@ public final class ChatModule extends AbstractModule {
 	@Provides
 	@Singleton
 	MiddlewareServlet provideMainServlet(
-			RoomInitializerServlet roomInitializerServlet,
 			DynamicOTNodeServlet<FriendListOperation> friendsListServlet,
 			DynamicOTNodeServlet<RoomListOperation> roomListServlet,
 			DynamicOTNodeServlet<ChatMultiOperation> roomServlet
@@ -58,8 +56,7 @@ public final class ChatModule extends AbstractModule {
 		return MiddlewareServlet.create()
 				.with("/friendList/:privKey", friendsListServlet)
 				.with("/roomList/:privKey", roomListServlet)
-				.with("/room/:suffix/:privKey", roomServlet)
-				.with("/createRoom/:privKey", roomInitializerServlet);
+				.with("/room/:suffix/:privKey", roomServlet);
 	}
 
 	@Provides

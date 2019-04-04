@@ -15,9 +15,6 @@ import io.global.ot.client.MyRepositoryId;
 import io.global.ot.client.OTDriver;
 import io.global.ot.client.OTRepositoryAdapter;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import static io.datakernel.codec.json.JsonUtils.fromJson;
 import static io.datakernel.codec.json.JsonUtils.toJson;
 import static io.datakernel.http.HttpHeaderValue.ofContentType;
@@ -29,7 +26,7 @@ import static io.datakernel.http.MediaTypes.PLAIN_TEXT;
 import static io.global.ot.api.OTNodeCommand.*;
 import static io.global.ot.util.BinaryDataFormats.REGISTRY;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Collections.*;
+import static java.util.Collections.emptySet;
 
 public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 	private static final StructuredCodec<CommitId> COMMIT_ID_CODEC = REGISTRY.get(CommitId.class);
@@ -39,7 +36,6 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 	private final OTDriver driver;
 	private final StructuredCodec<D> diffCodec;
 	private final StructuredCodec<FetchData<CommitId, D>> fetchDataCodec;
-	private final Set<RepoID> initialized = new HashSet<>();
 	private final String prefix;
 
 	private DynamicOTNodeServlet(OTDriver driver, OTSystem<D> otSystem, StructuredCodec<D> diffCodec, String prefix) {
@@ -128,24 +124,7 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 
 			MyRepositoryId<D> myRepositoryId = new MyRepositoryId<>(repoID, privKey, diffCodec);
 			OTRepositoryAdapter<D> adapter = new OTRepositoryAdapter<>(driver, myRepositoryId, emptySet());
-			OTNodeImpl<CommitId, D, OTCommit<CommitId, D>> otNode = OTNodeImpl.create(adapter, otSystem);
-			if (suffix != null || initialized.contains(repoID)) {
-				return Promise.of(otNode);
-			} else {
-				return driver.getHeads(repoID)
-						.then(heads -> {
-							if (!heads.isEmpty()) {
-								return Promise.complete();
-							}
-
-							OTCommit<CommitId, D> rootCommit = driver.createCommit(0, myRepositoryId, emptyMap(), 1);
-							return driver.push(myRepositoryId, rootCommit)
-									.then($ -> driver.updateHeads(myRepositoryId, singleton(rootCommit.getId()), emptySet()))
-									.then($ -> driver.saveSnapshot(myRepositoryId, rootCommit.getId(), emptyList()));
-						})
-						.map($ -> otNode)
-						.whenResult($ -> initialized.add(repoID));
-			}
+			return Promise.of(OTNodeImpl.create(adapter, otSystem));
 		} catch (ParseException e) {
 			return Promise.ofException(e);
 		}

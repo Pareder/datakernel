@@ -11,6 +11,7 @@ import io.global.chat.chatroom.participants.ParticipantsOTSystem;
 import io.global.chat.chatroom.participants.RemoveParticipants;
 import io.global.chat.chatroom.roomname.RoomNameOTSystem;
 import io.global.common.PubKey;
+import io.global.ot.api.RepoID;
 
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -24,6 +25,7 @@ public final class Utils {
 
 	private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 	public static final StructuredCodec<PubKey> PUB_KEY_HEX_CODEC = STRING_CODEC.transform(PubKey::fromString, PubKey::asString);
+	public static final StructuredCodec<RepoID> REPO_ID_HEX_CODEC = STRING_CODEC.transform(RepoID::fromString, RepoID::asString);
 	public static final String ADD_PARTICIPANTS = "Add Participants";
 	public static final String REMOVE_PARTICIPANTS = "Remove Participants";
 

@@ -59,7 +59,7 @@ public class ChatRoomTest {
 		OTDriver driver = new OTDriver(GlobalOTNodeImpl.create(eventloop, new RawServerId("test"), discoveryService,
 				new CommitStorageStub(), rawServerId -> {throw new IllegalStateException();}), SimKey.generate());
 		OTRepositoryAdapter<ChatMultiOperation> repository = new OTRepositoryAdapter<>(driver, myRepositoryId, emptySet());
-		OTCommit<CommitId, ChatMultiOperation> root = await(repository.createCommit(emptyMap(), 1));
+		OTCommit<CommitId, ChatMultiOperation> root = await(repository.createCommit(0, emptyMap(), 1));
 		await(repository.pushAndUpdateHead(root));
 		await(repository.saveSnapshot(root.getId(), emptyList()));
 		OTAlgorithms<CommitId, ChatMultiOperation> algorithms = OTAlgorithms.create(eventloop, createMergedOTSystem(), repository);

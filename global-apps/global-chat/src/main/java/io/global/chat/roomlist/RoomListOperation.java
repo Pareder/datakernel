@@ -8,12 +8,12 @@ import java.util.Set;
 
 import static io.datakernel.codec.StructuredCodecs.BOOLEAN_CODEC;
 import static io.datakernel.codec.StructuredCodecs.object;
-import static io.global.ot.util.BinaryDataFormats.REGISTRY;
+import static io.global.chat.Utils.REPO_ID_HEX_CODEC;
 
 public class RoomListOperation {
 	public static final RoomListOperation EMPTY = new RoomListOperation(null, true);
 	public static final StructuredCodec<RoomListOperation> ROOM_LIST_CODEC = object(RoomListOperation::new,
-			"room", RoomListOperation::getRoom, REGISTRY.get(RepoID.class),
+			"room", RoomListOperation::getRoom, REPO_ID_HEX_CODEC,
 			"remove", RoomListOperation::isRemove, BOOLEAN_CODEC);
 
 	@Nullable
