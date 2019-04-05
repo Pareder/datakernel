@@ -19,11 +19,14 @@ package io.global.common;
 import io.datakernel.codec.StructuredDecoder;
 import io.datakernel.codec.StructuredEncoder;
 import io.datakernel.exception.ParseException;
+import io.datakernel.exception.StacklessException;
 import org.spongycastle.crypto.params.ECPublicKeyParameters;
 
 import static io.datakernel.codec.binary.BinaryUtils.*;
 
 public final class SignedData<T> {
+	public static final StacklessException UNVERIFIED = new StacklessException(SignedData.class, "Received signed data cannot be verified");
+
 	private final T value;
 	private final byte[] bytes;
 	private final Signature signature;
@@ -74,8 +77,12 @@ public final class SignedData<T> {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 		SignedData<?> that = (SignedData<?>) o;
 		return value.equals(that.value);
 	}

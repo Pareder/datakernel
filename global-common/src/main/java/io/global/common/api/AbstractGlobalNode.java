@@ -1,6 +1,5 @@
 package io.global.common.api;
 
-import io.datakernel.async.AsyncSupplier;
 import io.datakernel.async.Promise;
 import io.datakernel.async.Promises;
 import io.datakernel.time.CurrentTimeProvider;
@@ -104,8 +103,8 @@ public abstract class AbstractGlobalNode<S extends AbstractGlobalNode<S, L, N>, 
 						return local.apply(ns);
 					}
 					return Promises.firstSuccessful(Stream.concat(
-							nodes.stream().map(globalFsNode -> () -> self.apply(globalFsNode)),
-							Stream.generate(() -> AsyncSupplier.cast(() -> local.apply(ns))).limit(1)));
+							nodes.stream().map(node -> () -> self.apply(node)),
+							Stream.of(() -> local.apply(ns))));
 				});
 	}
 }
