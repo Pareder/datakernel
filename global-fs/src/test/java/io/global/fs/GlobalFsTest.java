@@ -58,6 +58,7 @@ import static io.datakernel.bytebuf.ByteBufStrings.wrapUtf8;
 import static io.datakernel.remotefs.FsClient.FILE_NOT_FOUND;
 import static io.datakernel.stream.processor.ByteBufRule.IgnoreLeaks;
 import static io.datakernel.util.CollectionUtils.set;
+import static io.global.common.NodeType.FS;
 import static io.global.fs.util.BinaryDataFormats.REGISTRY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.*;
@@ -66,8 +67,8 @@ import static org.junit.Assert.*;
 public final class GlobalFsTest {
 	public static final String FILENAME = "folder/test.txt";
 	public static final String SIMPLE_CONTENT = "hello world, this is some string of bytes for Global-FS testing";
-	private static final RawServerId FIRST_ID = new RawServerId("http://127.0.0.1:1001");
-	private static final RawServerId SECOND_ID = new RawServerId("http://127.0.0.1:1002");
+	private static final NodeID FIRST_ID = new NodeID(FS, "http://127.0.0.1:1001");
+	private static final NodeID SECOND_ID = new NodeID(FS, "http://127.0.0.1:1002");
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -90,8 +91,8 @@ public final class GlobalFsTest {
 	private FsClient aliceGateway;
 	private FsClient bobGateway;
 
-	private static String folderFor(RawServerId serverId) {
-		return "server_" + serverId.getServerIdString().split(":")[2];
+	private static String folderFor(NodeID serverId) {
+		return "server_" + serverId.getUri().split(":")[2];
 	}
 
 	@Before
@@ -102,11 +103,11 @@ public final class GlobalFsTest {
 		storage = LocalFsClient.create(Eventloop.getCurrentEventloop(), dir).withRevisions();
 		discoveryService = LocalDiscoveryService.create(Eventloop.getCurrentEventloop(), storage.subfolder("discovery"));
 
-		Map<RawServerId, GlobalFsNode> nodes = new HashMap<>();
+		Map<NodeID, GlobalFsNode> nodes = new HashMap<>();
 
-		Function<RawServerId, GlobalFsNode> clientFactory = new Function<RawServerId, GlobalFsNode>() {
+		Function<NodeID, GlobalFsNode> clientFactory = new Function<NodeID, GlobalFsNode>() {
 			@Override
-			public GlobalFsNode apply(RawServerId serverId) {
+			public GlobalFsNode apply(NodeID serverId) {
 				GlobalFsNode node = nodes.computeIfAbsent(serverId, id -> GlobalFsNodeImpl.create(serverId, discoveryService, this, storage.subfolder(folderFor(id))));
 				// StubHttpClient client = StubHttpClient.of(GlobalFsNodeServlet.create(node));
 				// return HttpGlobalFsNode.create(serverId.getServerIdString(), client);
@@ -125,14 +126,14 @@ public final class GlobalFsTest {
 		firstAliceAdapter = firstDriver.adapt(alice.getPrivKey());
 		secondAliceAdapter = secondDriver.adapt(alice.getPrivKey());
 
-		GlobalFsNode cachingNode = clientFactory.apply(new RawServerId("http://127.0.0.1:1003"));
+		GlobalFsNode cachingNode = clientFactory.apply(new NodeID(FS, "http://127.0.0.1:1003"));
 		GlobalFsDriver driver = GlobalFsDriver.create(cachingNode, CheckpointPosStrategy.of(16));
 		aliceGateway = driver.adapt(alice.getPrivKey());
 		bobGateway = driver.adapt(bob.getPrivKey());
 	}
 
-	private void announce(KeyPair keys, Set<RawServerId> rawServerIds) {
-		await(discoveryService.announce(keys.getPubKey(), SignedData.sign(REGISTRY.get(AnnounceData.class), AnnounceData.of(123, rawServerIds), keys.getPrivKey())));
+	private void announce(KeyPair keys, Set<NodeID> nodeIDS) {
+		await(discoveryService.announce(keys.getPubKey(), SignedData.sign(REGISTRY.get(AnnounceData.class), AnnounceData.of(123, nodeIDS), keys.getPrivKey())));
 	}
 
 	@Test

@@ -32,7 +32,7 @@ import io.datakernel.http.*;
 import io.datakernel.remotefs.FsClient;
 import io.datakernel.remotefs.LocalFsClient;
 import io.datakernel.util.guice.OptionalDependency;
-import io.global.common.RawServerId;
+import io.global.common.NodeID;
 import io.global.common.api.DiscoveryService;
 import io.global.common.discovery.HttpDiscoveryService;
 import io.global.db.GlobalDbNodeImpl;
@@ -75,21 +75,21 @@ public class GlobalNodesModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	GlobalOTNodeImpl provide(Eventloop eventloop, DiscoveryService discoveryService, Function<RawServerId, GlobalOTNode> factory, CommitStorage commitStorage, Config config) {
+	GlobalOTNodeImpl provide(Eventloop eventloop, DiscoveryService discoveryService, Function<NodeID, GlobalOTNode> factory, CommitStorage commitStorage, Config config) {
 		return GlobalOTNodeImpl.create(eventloop, config.get(ofRawServerId(), "ot.serverId"), discoveryService, commitStorage, factory)
 				.initialize(ofGlobalOTNodeImpl(config.getChild("ot")));
 	}
 
 	@Provides
 	@Singleton
-	GlobalFsNodeImpl provide(Config config, DiscoveryService discoveryService, Function<RawServerId, GlobalFsNode> factory, FsClient fsClient) {
+	GlobalFsNodeImpl provide(Config config, DiscoveryService discoveryService, Function<NodeID, GlobalFsNode> factory, FsClient fsClient) {
 		return GlobalFsNodeImpl.create(config.get(ofRawServerId(), "fs.serverId"), discoveryService, factory, fsClient)
 				.initialize(ofLocalGlobalFsNode(config.getChild("fs")));
 	}
 
 	@Provides
 	@Singleton
-	GlobalDbNodeImpl provide(Config config, DiscoveryService discoveryService, Function<RawServerId, GlobalDbNode> factory) {
+	GlobalDbNodeImpl provide(Config config, DiscoveryService discoveryService, Function<NodeID, GlobalDbNode> factory) {
 		return GlobalDbNodeImpl.create(config.get(ofRawServerId(), "db.serverId"), discoveryService, factory, ($1, $2) -> new RuntimeDbStorageStub())
 				.initialize(ofLocalGlobalDbNode(config.getChild("ot")));
 	}
@@ -165,20 +165,20 @@ public class GlobalNodesModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	Function<RawServerId, GlobalFsNode> provideFsNodeFactory(IAsyncHttpClient client) {
-		return id -> HttpGlobalFsNode.create(id.getServerIdString(), client);
+	Function<NodeID, GlobalFsNode> provideFsNodeFactory(IAsyncHttpClient client) {
+		return id -> HttpGlobalFsNode.create(id.getUri(), client);
 	}
 
 	@Provides
 	@Singleton
-	Function<RawServerId, GlobalOTNode> provideOTNodeFactory(IAsyncHttpClient client) {
-		return id -> GlobalOTNodeHttpClient.create(client, id.getServerIdString());
+	Function<NodeID, GlobalOTNode> provideOTNodeFactory(IAsyncHttpClient client) {
+		return id -> GlobalOTNodeHttpClient.create(client, id.getUri());
 	}
 
 	@Provides
 	@Singleton
-	Function<RawServerId, GlobalDbNode> provideDbNodeFactory(IAsyncHttpClient client) {
-		return id -> HttpGlobalDbNode.create(id.getServerIdString(), client);
+	Function<NodeID, GlobalDbNode> provideDbNodeFactory(IAsyncHttpClient client) {
+		return id -> HttpGlobalDbNode.create(id.getUri(), client);
 	}
 
 	@Provides

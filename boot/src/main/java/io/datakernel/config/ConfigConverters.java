@@ -25,10 +25,7 @@ import io.datakernel.exception.ParseException;
 import io.datakernel.net.DatagramSocketSettings;
 import io.datakernel.net.ServerSocketSettings;
 import io.datakernel.net.SocketSettings;
-import io.datakernel.util.MemSize;
-import io.datakernel.util.SimpleThreadFactory;
-import io.datakernel.util.StringFormatUtils;
-import io.datakernel.util.Utils;
+import io.datakernel.util.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
@@ -165,6 +162,28 @@ public final class ConfigConverters {
 	 */
 	public static ConfigConverter<Long> ofInstantAsEpochMillis() {
 		return ofInstant().transform(Instant::toEpochMilli, Instant::ofEpochMilli);
+	}
+
+	public static <T> ConfigConverter<T> of(ParserFunction<String, T> from) {
+		return new ConfigConverter<T>() {
+			@Override
+			public T get(Config config, T defaultValue) {
+				if (config.hasValue()) {
+					return get(config);
+				}
+				return defaultValue;
+			}
+
+			@NotNull
+			@Override
+			public T get(Config config) {
+				try {
+					return from.parse(config.getValue());
+				} catch (ParseException e) {
+					throw new IllegalArgumentException(e);
+				}
+			}
+		};
 	}
 
 	public static ConfigConverter<String> ofString() {

@@ -58,9 +58,10 @@ public final class BinaryDataFormats {
 								point -> point.getXCoord().toBigInteger(), registry.get(BigInteger.class),
 								point -> point.getYCoord().toBigInteger(), registry.get(BigInteger.class)))
 
-				.with(RawServerId.class, registry ->
-						tuple(RawServerId::parse,
-								RawServerId::getServerIdString, registry.get(String.class)))
+				.with(NodeID.class, registry ->
+						tuple(NodeID::parse,
+								NodeID::getNodeType, registry.get(NodeType.class),
+								NodeID::getUri, registry.get(String.class)))
 
 				.with(PubKey.class, registry ->
 						tuple(PubKey::parse,
@@ -93,7 +94,7 @@ public final class BinaryDataFormats {
 				.with(AnnounceData.class, registry ->
 						tuple(AnnounceData::parse,
 								AnnounceData::getTimestamp, registry.get(long.class),
-								AnnounceData::getServerIds, registry.get(new TypeT<Set<RawServerId>>() {})))
+								AnnounceData::getServerIds, registry.get(new TypeT<Set<NodeID>>() {})))
 
 				.with(SharedSimKey.class, registry ->
 						tuple(SharedSimKey::parse,

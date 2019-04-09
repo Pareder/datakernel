@@ -24,8 +24,8 @@ import io.datakernel.csp.process.ChannelSplitter;
 import io.datakernel.csp.queue.ChannelZeroBuffer;
 import io.datakernel.util.Initializable;
 import io.datakernel.util.ref.RefBoolean;
+import io.global.common.NodeID;
 import io.global.common.PubKey;
-import io.global.common.RawServerId;
 import io.global.common.SignedData;
 import io.global.common.api.AbstractGlobalNode;
 import io.global.common.api.DiscoveryService;
@@ -51,16 +51,16 @@ public final class GlobalDbNodeImpl extends AbstractGlobalNode<GlobalDbNodeImpl,
 	private final BiFunction<PubKey, String, DbStorage> storageFactory;
 
 	// region creators
-	private GlobalDbNodeImpl(RawServerId id, DiscoveryService discoveryService,
-			Function<RawServerId, GlobalDbNode> nodeFactory,
-			BiFunction<PubKey, String, DbStorage> storageFactory) {
+	private GlobalDbNodeImpl(NodeID id, DiscoveryService discoveryService,
+							 Function<NodeID, GlobalDbNode> nodeFactory,
+							 BiFunction<PubKey, String, DbStorage> storageFactory) {
 		super(id, discoveryService, nodeFactory);
 		this.storageFactory = storageFactory;
 	}
 
-	public static GlobalDbNodeImpl create(RawServerId id, DiscoveryService discoveryService,
-			Function<RawServerId, GlobalDbNode> nodeFactory,
-			BiFunction<PubKey, String, DbStorage> storageFactory) {
+	public static GlobalDbNodeImpl create(NodeID id, DiscoveryService discoveryService,
+										  Function<NodeID, GlobalDbNode> nodeFactory,
+										  BiFunction<PubKey, String, DbStorage> storageFactory) {
 		return new GlobalDbNodeImpl(id, discoveryService, nodeFactory, storageFactory);
 	}
 	// endregion

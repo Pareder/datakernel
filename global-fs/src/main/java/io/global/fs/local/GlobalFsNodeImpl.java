@@ -24,8 +24,8 @@ import io.datakernel.csp.queue.ChannelZeroBuffer;
 import io.datakernel.remotefs.FsClient;
 import io.datakernel.util.Initializable;
 import io.datakernel.util.ref.RefBoolean;
+import io.global.common.NodeID;
 import io.global.common.PubKey;
-import io.global.common.RawServerId;
 import io.global.common.SignedData;
 import io.global.common.api.AbstractGlobalNode;
 import io.global.common.api.DiscoveryService;
@@ -60,23 +60,23 @@ public final class GlobalFsNodeImpl extends AbstractGlobalNode<GlobalFsNodeImpl,
 	private final Function<PubKey, CheckpointStorage> checkpointStorageFactory;
 
 	// region creators
-	private GlobalFsNodeImpl(RawServerId id, DiscoveryService discoveryService,
-			Function<RawServerId, GlobalFsNode> nodeFactory,
-			Function<PubKey, FsClient> storageFactory,
-			Function<PubKey, CheckpointStorage> checkpointStorageFactory) {
+	private GlobalFsNodeImpl(NodeID id, DiscoveryService discoveryService,
+							 Function<NodeID, GlobalFsNode> nodeFactory,
+							 Function<PubKey, FsClient> storageFactory,
+							 Function<PubKey, CheckpointStorage> checkpointStorageFactory) {
 		super(id, discoveryService, nodeFactory);
 		this.storageFactory = storageFactory;
 		this.checkpointStorageFactory = checkpointStorageFactory;
 	}
 
-	public static GlobalFsNodeImpl create(RawServerId id, DiscoveryService discoveryService,
-			Function<RawServerId, GlobalFsNode> nodeFactory,
-			Function<PubKey, FsClient> storageFactory,
-			Function<PubKey, CheckpointStorage> checkpointStorageFactory) {
+	public static GlobalFsNodeImpl create(NodeID id, DiscoveryService discoveryService,
+										  Function<NodeID, GlobalFsNode> nodeFactory,
+										  Function<PubKey, FsClient> storageFactory,
+										  Function<PubKey, CheckpointStorage> checkpointStorageFactory) {
 		return new GlobalFsNodeImpl(id, discoveryService, nodeFactory, storageFactory, checkpointStorageFactory);
 	}
 
-	public static GlobalFsNodeImpl create(RawServerId id, DiscoveryService discoveryService, Function<RawServerId, GlobalFsNode> nodeFactory, FsClient fsClient) {
+	public static GlobalFsNodeImpl create(NodeID id, DiscoveryService discoveryService, Function<NodeID, GlobalFsNode> nodeFactory, FsClient fsClient) {
 		FsClient data = fsClient.subfolder("data");
 		FsClient checkpoints = fsClient.subfolder("checkpoints");
 		return new GlobalFsNodeImpl(id, discoveryService, nodeFactory,

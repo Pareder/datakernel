@@ -60,6 +60,7 @@ import java.util.stream.IntStream;
 import static io.datakernel.async.TestUtils.await;
 import static io.datakernel.eventloop.Eventloop.getCurrentEventloop;
 import static io.datakernel.util.CollectionUtils.*;
+import static io.global.common.NodeType.OT;
 import static io.global.ot.util.BinaryDataFormats.REGISTRY;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -132,7 +133,7 @@ public class GlobalOTNodeImplTest {
 				}
 				storage = storageFn.apply(temporaryFolder.newFolder(folder).toPath());
 				GlobalOTNodeImpl master = GlobalOTNodeImpl.create(Eventloop.getCurrentEventloop(),
-						new RawServerId(folder),
+						new NodeID(OT, folder),
 						discoveryService,
 						storage,
 						createFactory())
@@ -144,7 +145,7 @@ public class GlobalOTNodeImplTest {
 			}
 		});
 		AnnounceData announceData = new AnnounceData(now.currentTimeMillis(), masters.keySet().stream()
-				.map(id -> new RawServerId("master" + id))
+				.map(id -> new NodeID(OT, "master" + id))
 				.collect(toSet()));
 		SignedData<AnnounceData> signedData = SignedData.sign(REGISTRY.get(AnnounceData.class), announceData, PRIV_KEY);
 		await(discoveryService.announce(PUB_KEY, signedData));
@@ -163,7 +164,7 @@ public class GlobalOTNodeImplTest {
 		COMMIT_ID = 1;
 		intermediateStorage = storageFn.apply(temporaryFolder.newFolder("intermediate").toPath());
 		intermediateNode = GlobalOTNodeImpl.create(Eventloop.getCurrentEventloop(),
-				new RawServerId("intermediate"),
+				new NodeID(OT, "intermediate"),
 				discoveryService,
 				intermediateStorage,
 				createFactory())
@@ -703,7 +704,7 @@ public class GlobalOTNodeImplTest {
 				return Promise.of(null);
 			}
 		};
-		GlobalOTNodeImpl node = GlobalOTNodeImpl.create(Eventloop.getCurrentEventloop(), new RawServerId("test"),
+		GlobalOTNodeImpl node = GlobalOTNodeImpl.create(Eventloop.getCurrentEventloop(), new NodeID(OT, "test"),
 				discoveryService, storageFn.apply(temporaryFolder.newFolder().toPath()), id -> null);
 
 		await(node.list(PUB_KEY));
@@ -814,9 +815,9 @@ public class GlobalOTNodeImplTest {
 		return commitIds;
 	}
 
-	private Function<RawServerId, GlobalOTNode> createFactory() {
+	private Function<NodeID, GlobalOTNode> createFactory() {
 		return rawServerId -> {
-			String idString = rawServerId.getServerIdString();
+			String idString = rawServerId.getUri();
 
 			if (idString.equals("intermediate")) {
 				return intermediateNode;
@@ -825,7 +826,7 @@ public class GlobalOTNodeImplTest {
 				Integer id = Integer.valueOf(idString.substring(6));
 				return masters.get(id).getValue2();
 			}
-			throw new AssertionError("No server corresponds to this id: " + rawServerId.getServerIdString());
+			throw new AssertionError("No server corresponds to this id: " + rawServerId.getUri());
 		};
 	}
 

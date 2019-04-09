@@ -2,7 +2,7 @@ package io.global.ot.server;
 
 import io.datakernel.async.AsyncSupplier;
 import io.datakernel.async.Promise;
-import io.global.common.RawServerId;
+import io.global.common.NodeID;
 import io.global.common.SignedData;
 import io.global.ot.api.GlobalOTNode;
 import io.global.ot.api.RawCommitHead;
@@ -15,7 +15,7 @@ import java.util.Set;
 
 public final class MasterRepository {
 	@NotNull
-	private final RawServerId rawServerId;
+	private final NodeID nodeID;
 
 	@NotNull
 	private final RepoID repoID;
@@ -32,8 +32,8 @@ public final class MasterRepository {
 	@Nullable
 	private AsyncSupplier<Set<SignedData<RawCommitHead>>> poll;
 
-	public MasterRepository(@NotNull RawServerId rawServerId, @NotNull RepoID repoID, @NotNull GlobalOTNode node) {
-		this.rawServerId = rawServerId;
+	public MasterRepository(@NotNull NodeID nodeID, @NotNull RepoID repoID, @NotNull GlobalOTNode node) {
+		this.nodeID = nodeID;
 		this.repoID = repoID;
 		this.node = node;
 	}
@@ -47,8 +47,8 @@ public final class MasterRepository {
 	}
 
 	@NotNull
-	public RawServerId getRawServerId() {
-		return rawServerId;
+	public NodeID getNodeID() {
+		return nodeID;
 	}
 
 	@NotNull

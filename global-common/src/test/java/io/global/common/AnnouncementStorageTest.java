@@ -31,6 +31,7 @@ import static io.datakernel.async.TestUtils.await;
 import static io.datakernel.test.TestUtils.dataSource;
 import static io.datakernel.util.CollectionUtils.set;
 import static io.global.common.BinaryDataFormats.REGISTRY;
+import static io.global.common.NodeType.OT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -89,8 +90,8 @@ public class AnnouncementStorageTest {
 		PrivKey privKey = keys.getPrivKey();
 
 		AnnounceData announceData = AnnounceData.of(100, set(
-				new RawServerId("First"),
-				new RawServerId("Second")));
+				new NodeID(OT, "First"),
+				new NodeID(OT, "Second")));
 		SignedData<AnnounceData> announcement = SignedData.sign(ANNOUNCE_DATA_CODEC, announceData, privKey);
 
 		await(storage.store(pubKey, announcement));
@@ -111,13 +112,13 @@ public class AnnouncementStorageTest {
 		PrivKey privKey = keys.getPrivKey();
 
 		AnnounceData announceData1 = AnnounceData.of(100, set(
-				new RawServerId("First"),
-				new RawServerId("Second")));
+				new NodeID(OT, "First"),
+				new NodeID(OT, "Second")));
 		SignedData<AnnounceData> announcement1 = SignedData.sign(ANNOUNCE_DATA_CODEC, announceData1, privKey);
 
 		AnnounceData announceData2 = AnnounceData.of(50, set(
-				new RawServerId("One"),
-				new RawServerId("Two")));
+				new NodeID(OT, "One"),
+				new NodeID(OT, "Two")));
 		SignedData<AnnounceData> announcement2 = SignedData.sign(ANNOUNCE_DATA_CODEC, announceData2, privKey);
 
 		await(storage.store(pubKey, announcement1));
@@ -139,13 +140,13 @@ public class AnnouncementStorageTest {
 		PrivKey privKey2 = keys2.getPrivKey();
 
 		AnnounceData announceData1 = AnnounceData.of(100, set(
-				new RawServerId("First"),
-				new RawServerId("Second")));
+				new NodeID(OT, "First"),
+				new NodeID(OT, "Second")));
 		SignedData<AnnounceData> announcement1 = SignedData.sign(ANNOUNCE_DATA_CODEC, announceData1, privKey1);
 
 		AnnounceData announceData2 = AnnounceData.of(50, set(
-				new RawServerId("One"),
-				new RawServerId("Two")));
+				new NodeID(OT, "One"),
+				new NodeID(OT, "Two")));
 		SignedData<AnnounceData> announcement2 = SignedData.sign(ANNOUNCE_DATA_CODEC, announceData2, privKey2);
 
 		await(storage.store(pubKey1, announcement1));

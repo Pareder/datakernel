@@ -5,8 +5,8 @@ import io.datakernel.csp.ChannelConsumer;
 import io.datakernel.csp.ChannelSupplier;
 import io.datakernel.util.CollectionUtils;
 import io.datakernel.util.ref.Ref;
+import io.global.common.NodeID;
 import io.global.common.PubKey;
-import io.global.common.RawServerId;
 import io.global.common.SignedData;
 import io.global.common.api.AbstractGlobalNamespace;
 import io.global.ot.api.*;
@@ -78,7 +78,7 @@ public final class GlobalOTNamespace extends AbstractGlobalNamespace<GlobalOTNam
 	}
 
 	// VisibleForTesting
-	Map<RawServerId, GlobalOTNode> getMasters() {
+	Map<NodeID, GlobalOTNode> getMasters() {
 		return masterNodes;
 	}
 
@@ -90,7 +90,7 @@ public final class GlobalOTNamespace extends AbstractGlobalNamespace<GlobalOTNam
 		private long updateSnapshotsTimestamp;
 		private long updatePullRequestsTimestamp;
 
-		private final AsyncSupplier<Map<RawServerId, MasterRepository>> ensureMasterRepositories = reuse(this::doEnsureMasterRepositories);
+		private final AsyncSupplier<Map<NodeID, MasterRepository>> ensureMasterRepositories = reuse(this::doEnsureMasterRepositories);
 		private final AsyncSupplier<Void> update = reuse(this::doUpdate);
 		private final AsyncSupplier<Void> updateHeads = reuse(this::doUpdateHeads);
 		private final AsyncSupplier<Void> updateSnapshots = reuse(this::doUpdateSnapshots);
@@ -101,7 +101,7 @@ public final class GlobalOTNamespace extends AbstractGlobalNamespace<GlobalOTNam
 		private final AsyncSupplier<Void> pushPullRequests = reuse(this::doPushPullRequests);
 		private final Function<Set<SignedData<RawCommitHead>>, Promise<Void>> saveHeads = Promises.coalesce(this::doSaveHeads, CollectionUtils::union);
 
-		private final Map<RawServerId, MasterRepository> masterRepositories = new HashMap<>();
+		private final Map<NodeID, MasterRepository> masterRepositories = new HashMap<>();
 
 		@Nullable
 		private Set<SignedData<RawCommitHead>> polledHeads;
@@ -118,7 +118,7 @@ public final class GlobalOTNamespace extends AbstractGlobalNamespace<GlobalOTNam
 		}
 
 		// region API methods
-		public Promise<Map<RawServerId, MasterRepository>> ensureMasterRepositories() {
+		public Promise<Map<NodeID, MasterRepository>> ensureMasterRepositories() {
 			return ensureMasterRepositories.get();
 		}
 
@@ -161,7 +161,7 @@ public final class GlobalOTNamespace extends AbstractGlobalNamespace<GlobalOTNam
 
 		// region API methods implementation
 		@NotNull
-		private Promise<Map<RawServerId, MasterRepository>> doEnsureMasterRepositories() {
+		private Promise<Map<NodeID, MasterRepository>> doEnsureMasterRepositories() {
 			return ensureMasterNodes()
 					.whenResult($ -> {
 						difference(masterRepositories.keySet(), masterNodes.keySet())

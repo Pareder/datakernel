@@ -3,26 +3,26 @@ package io.global.launchers;
 import io.datakernel.config.ConfigConverter;
 import io.global.common.*;
 
-import static io.datakernel.config.ConfigConverters.ofString;
+import static io.datakernel.config.ConfigConverters.of;
 
 public class GlobalConfigConverters {
-	public static ConfigConverter<RawServerId> ofRawServerId() {
-		return ofString().transform(RawServerId::new, RawServerId::getServerIdString);
+	public static ConfigConverter<NodeID> ofRawServerId() {
+		return of(uri -> new NodeID(null, uri)); // TODO this is a stub
 	}
 
 	public static ConfigConverter<PubKey> ofPubKey() {
-		return ofString().transform(PubKey::fromString, PubKey::asString);
+		return of(PubKey::fromString);
 	}
 
 	public static ConfigConverter<PrivKey> ofPrivKey() {
-		return ofString().transform(PrivKey::fromString, PrivKey::asString);
+		return of(PrivKey::fromString);
 	}
 
 	public static ConfigConverter<SimKey> ofSimKey() {
-		return ofString().transform(SimKey::fromString, SimKey::asString);
+		return of(SimKey::fromString);
 	}
 
 	public static ConfigConverter<Hash> ofHash() {
-		return ofString().transform(Hash::fromString, Hash::asString);
+		return of(Hash::fromString);
 	}
 }

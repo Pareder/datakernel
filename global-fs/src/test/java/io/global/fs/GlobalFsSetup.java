@@ -28,8 +28,8 @@ import io.datakernel.remotefs.FsClient;
 import io.datakernel.stream.processor.DatakernelRunner;
 import io.datakernel.stream.processor.Manual;
 import io.global.common.KeyPair;
+import io.global.common.NodeID;
 import io.global.common.PrivKey;
-import io.global.common.RawServerId;
 import io.global.common.api.AnnounceData;
 import io.global.common.api.DiscoveryService;
 import io.global.common.discovery.HttpDiscoveryService;
@@ -49,6 +49,7 @@ import static io.datakernel.eventloop.Eventloop.getCurrentEventloop;
 import static io.datakernel.http.AsyncHttpClient.create;
 import static io.datakernel.util.CollectionUtils.set;
 import static io.global.common.BinaryDataFormats.REGISTRY;
+import static io.global.common.NodeType.FS;
 import static io.global.common.SignedData.sign;
 import static io.global.fs.api.CheckpointPosStrategy.of;
 import static java.lang.Integer.parseInt;
@@ -76,8 +77,8 @@ public final class GlobalFsSetup {
 
 		String firstAddress = "http://127.0.0.1:8001/";
 		String secondAddress = "http://127.0.0.1:8002/";
-		RawServerId first = new RawServerId(firstAddress);
-		RawServerId second = new RawServerId(secondAddress);
+		NodeID first = new NodeID(FS, firstAddress);
+		NodeID second = new NodeID(FS, secondAddress);
 
 		GlobalFsNode firstClient = HttpGlobalFsNode.create(firstAddress, client);
 		GlobalFsNode secondClient = HttpGlobalFsNode.create(secondAddress, client);
@@ -112,10 +113,10 @@ public final class GlobalFsSetup {
 		AsyncHttpClient client = create(getCurrentEventloop());
 		DiscoveryService discoveryService = HttpDiscoveryService.create(new InetSocketAddress(9001), client);
 
-		Set<RawServerId> servers = new HashSet<>();
+		Set<NodeID> servers = new HashSet<>();
 
 		for (int i = 1; i <= parseInt(getProperty("globalfs.testing.numOfServers")); i++) {
-			servers.add(new RawServerId("127.0.0.1:" + (8000 + i)));
+			servers.add(new NodeID(FS, "127.0.0.1:" + (8000 + i)));
 		}
 
 		await(discoveryService.announce(alice.getPubKey(), sign(ANNOUNCE_DATA_CODEC, AnnounceData.of(123, servers), alice.getPrivKey())));

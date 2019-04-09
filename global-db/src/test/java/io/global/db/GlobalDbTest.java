@@ -49,6 +49,7 @@ import java.util.function.Function;
 
 import static io.datakernel.async.TestUtils.await;
 import static io.datakernel.util.CollectionUtils.set;
+import static io.global.common.NodeType.DB;
 import static io.global.db.util.BinaryDataFormats.REGISTRY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
@@ -58,8 +59,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(DatakernelRunner.class)
 public final class GlobalDbTest {
-	private static final RawServerId FIRST_ID = new RawServerId("http://127.0.0.1:1001");
-	private static final RawServerId SECOND_ID = new RawServerId("http://127.0.0.1:1002");
+	private static final NodeID FIRST_ID = new NodeID(DB, "http://127.0.0.1:1001");
+	private static final NodeID SECOND_ID = new NodeID(DB, "http://127.0.0.1:1002");
 
 	@Rule
 	public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -75,7 +76,7 @@ public final class GlobalDbTest {
 	private GlobalDbAdapter firstAliceAdapter;
 	private GlobalDbAdapter secondAliceAdapter;
 
-	private Function<RawServerId, GlobalDbNode> nodeFactory;
+	private Function<NodeID, GlobalDbNode> nodeFactory;
 	private BiFunction<PubKey, String, DbStorage> storageFactory;
 
 	private DbClient cachingAliceGateway;
@@ -90,14 +91,14 @@ public final class GlobalDbTest {
 
 		storageFactory = ($1, $2) -> new RuntimeDbStorageStub();
 
-		Map<RawServerId, GlobalDbNode> nodes = new HashMap<>();
+		Map<NodeID, GlobalDbNode> nodes = new HashMap<>();
 
-		nodeFactory = new Function<RawServerId, GlobalDbNode>() {
+		nodeFactory = new Function<NodeID, GlobalDbNode>() {
 			@Override
-			public GlobalDbNode apply(RawServerId serverId) {
+			public GlobalDbNode apply(NodeID serverId) {
 				GlobalDbNode node = nodes.computeIfAbsent(serverId, id -> GlobalDbNodeImpl.create(id, discoveryService, this, storageFactory));
 				StubHttpClient client = StubHttpClient.of(GlobalDbNodeServlet.create(node));
-				return HttpGlobalDbNode.create(serverId.getServerIdString(), client);
+				return HttpGlobalDbNode.create(serverId.getUri(), client);
 			}
 		};
 
@@ -112,13 +113,13 @@ public final class GlobalDbTest {
 		firstAliceAdapter = firstDriver.adapt(alice);
 		secondAliceAdapter = secondDriver.adapt(alice);
 
-		GlobalDbNode cachingNode = nodeFactory.apply(new RawServerId("http://127.0.0.1:1003"));
+		GlobalDbNode cachingNode = nodeFactory.apply(new NodeID(DB, "http://127.0.0.1:1003"));
 		GlobalDbDriver cachingDriver = GlobalDbDriver.create(cachingNode);
 		cachingAliceGateway = cachingDriver.adapt(alice);
 	}
 
-	private void announce(KeyPair keys, Set<RawServerId> rawServerIds) {
-		await(discoveryService.announce(keys.getPubKey(), SignedData.sign(REGISTRY.get(AnnounceData.class), AnnounceData.of(123, rawServerIds), keys.getPrivKey())));
+	private void announce(KeyPair keys, Set<NodeID> nodeIDS) {
+		await(discoveryService.announce(keys.getPubKey(), SignedData.sign(REGISTRY.get(AnnounceData.class), AnnounceData.of(123, nodeIDS), keys.getPrivKey())));
 	}
 
 	private static Set<DbItem> createContent() {
@@ -171,7 +172,7 @@ public final class GlobalDbTest {
 
 		Set<DbItem> content = createContent();
 
-		RawServerId serverId = new RawServerId("localhost:432");
+		NodeID serverId = new NodeID(DB, "localhost:432");
 		GlobalDbNode other = GlobalDbNodeImpl.create(serverId, discoveryService, nodeFactory, storageFactory);
 		GlobalDbDriver otherDriver = GlobalDbDriver.create(other);
 		DbClient otherClient = otherDriver.adapt(alice.getPubKey());
@@ -187,7 +188,7 @@ public final class GlobalDbTest {
 
 		Set<DbItem> content = createContent();
 
-		RawServerId serverId = new RawServerId("localhost:432");
+		NodeID serverId = new NodeID(DB, "localhost:432");
 		GlobalDbNode other = GlobalDbNodeImpl.create(serverId, discoveryService, nodeFactory, storageFactory);
 		GlobalDbDriver otherDriver = GlobalDbDriver.create(other);
 		DbClient otherClient = otherDriver.adapt(alice.getPubKey());

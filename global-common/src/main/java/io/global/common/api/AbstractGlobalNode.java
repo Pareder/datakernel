@@ -4,8 +4,8 @@ import io.datakernel.async.Promise;
 import io.datakernel.async.Promises;
 import io.datakernel.time.CurrentTimeProvider;
 import io.datakernel.util.ApplicationSettings;
+import io.global.common.NodeID;
 import io.global.common.PubKey;
-import io.global.common.RawServerId;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -23,14 +23,14 @@ public abstract class AbstractGlobalNode<S extends AbstractGlobalNode<S, L, N>, 
 	protected final Map<PubKey, L> namespaces = new HashMap<>();
 	protected Duration latencyMargin = DEFAULT_LATENCY_MARGIN;
 
-	private final Function<RawServerId, N> nodeFactory;
+	private final Function<NodeID, N> nodeFactory;
 
-	protected final RawServerId id;
+	protected final NodeID id;
 	protected final DiscoveryService discoveryService;
 
 	protected CurrentTimeProvider now = CurrentTimeProvider.ofSystem();
 
-	public AbstractGlobalNode(RawServerId id, DiscoveryService discoveryService, Function<RawServerId, N> nodeFactory) {
+	public AbstractGlobalNode(NodeID id, DiscoveryService discoveryService, Function<NodeID, N> nodeFactory) {
 		this.id = id;
 		this.discoveryService = discoveryService;
 		this.nodeFactory = nodeFactory;
@@ -66,11 +66,11 @@ public abstract class AbstractGlobalNode<S extends AbstractGlobalNode<S, L, N>, 
 		return managedPublicKeys;
 	}
 
-	public Function<RawServerId, N> getNodeFactory() {
+	public Function<NodeID, N> getNodeFactory() {
 		return nodeFactory;
 	}
 
-	public RawServerId getId() {
+	public NodeID getId() {
 		return id;
 	}
 

@@ -3,8 +3,8 @@ package io.global.common.api;
 import io.datakernel.async.AsyncSupplier;
 import io.datakernel.async.Promise;
 import io.datakernel.time.CurrentTimeProvider;
+import io.global.common.NodeID;
 import io.global.common.PubKey;
-import io.global.common.RawServerId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ public abstract class AbstractGlobalNamespace<S extends AbstractGlobalNamespace<
 	protected final PubKey space;
 
 	protected final AsyncSupplier<List<N>> ensureMasterNodes = reuse(this::doEnsureMasterNodes);
-	protected final Map<RawServerId, N> masterNodes = new HashMap<>();
+	protected final Map<NodeID, N> masterNodes = new HashMap<>();
 	protected long updateNodesTimestamp;
 	protected long announceTimestamp;
 
@@ -47,7 +47,7 @@ public abstract class AbstractGlobalNamespace<S extends AbstractGlobalNamespace<
 					if (e == null && announceData != null) {
 						AnnounceData announce = announceData.getValue();
 						if (announce.getTimestamp() >= announceTimestamp) {
-							Set<RawServerId> newServerIds = new HashSet<>(announce.getServerIds());
+							Set<NodeID> newServerIds = new HashSet<>(announce.getServerIds());
 							masterNodes.keySet().removeIf(id -> !newServerIds.contains(id));
 							if (newServerIds.remove(node.getId())) { // ensure that we are master for the space if it was announced
 								if (node.getManagedPublicKeys().add(space)) {

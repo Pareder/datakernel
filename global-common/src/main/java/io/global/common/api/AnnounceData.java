@@ -17,25 +17,25 @@
 package io.global.common.api;
 
 import io.datakernel.exception.ParseException;
-import io.global.common.RawServerId;
+import io.global.common.NodeID;
 
 import java.util.Set;
 
 public final class AnnounceData {
 	private final long timestamp;
-	private final Set<RawServerId> serverIds;
+	private final Set<NodeID> serverIds;
 
 	// region creators
-	public AnnounceData(long timestamp, Set<RawServerId> serverIds) {
+	public AnnounceData(long timestamp, Set<NodeID> serverIds) {
 		this.timestamp = timestamp;
 		this.serverIds = serverIds;
 	}
 
-	public static AnnounceData of(long timestamp, Set<RawServerId> serverIds) {
+	public static AnnounceData of(long timestamp, Set<NodeID> serverIds) {
 		return new AnnounceData(timestamp, serverIds);
 	}
 
-	public static AnnounceData parse(long timestamp, Set<RawServerId> serverIds) throws ParseException {
+	public static AnnounceData parse(long timestamp, Set<NodeID> serverIds) throws ParseException {
 		return new AnnounceData(timestamp, serverIds);
 	}
 	// endregion
@@ -44,14 +44,18 @@ public final class AnnounceData {
 		return timestamp;
 	}
 
-	public Set<RawServerId> getServerIds() {
+	public Set<NodeID> getServerIds() {
 		return serverIds;
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
 		AnnounceData that = (AnnounceData) o;
 		return timestamp == that.timestamp && serverIds.equals(that.serverIds);
 	}
