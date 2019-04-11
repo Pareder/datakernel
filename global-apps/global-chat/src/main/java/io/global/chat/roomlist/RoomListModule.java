@@ -3,7 +3,6 @@ package io.global.chat.roomlist;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.datakernel.eventloop.Eventloop;
 import io.global.chat.DynamicOTNodeServlet;
 import io.global.ot.client.OTDriver;
 
@@ -15,7 +14,7 @@ public final class RoomListModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	DynamicOTNodeServlet<RoomListOperation> provideServlet(Eventloop eventloop, OTDriver driver) {
-		return DynamicOTNodeServlet.create(eventloop, driver, createOTSystem(), ROOM_LIST_CODEC, REPOSITORY_NAME);
+	DynamicOTNodeServlet<RoomListOperation> provideServlet(OTDriver driver) {
+		return DynamicOTNodeServlet.create(driver, createOTSystem(), ROOM_LIST_CODEC, REPOSITORY_NAME);
 	}
 }

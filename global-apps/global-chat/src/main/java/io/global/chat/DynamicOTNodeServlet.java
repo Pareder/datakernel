@@ -121,7 +121,6 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 			String suffix = request.getPathParameterOrNull("suffix");
 			String repositoryName = prefix + (suffix == null ? "" : ('/' + suffix));
 			RepoID repoID = RepoID.of(privKey, repositoryName);
-
 			MyRepositoryId<D> myRepositoryId = new MyRepositoryId<>(repoID, privKey, diffCodec);
 			OTRepositoryAdapter<D> adapter = new OTRepositoryAdapter<>(driver, myRepositoryId, emptySet());
 			return Promise.of(OTNodeImpl.create(adapter, otSystem));

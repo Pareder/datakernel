@@ -3,7 +3,6 @@ package io.global.chat.friendlist;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.datakernel.eventloop.Eventloop;
 import io.global.chat.DynamicOTNodeServlet;
 import io.global.ot.client.OTDriver;
 
@@ -15,8 +14,8 @@ public final class FriendListModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	DynamicOTNodeServlet<FriendListOperation> provideServlet(Eventloop eventloop, OTDriver driver) {
-		return DynamicOTNodeServlet.create(eventloop, driver, createOTSystem(), FRIEND_LIST_CODEC, REPOSITORY_NAME);
+	DynamicOTNodeServlet<FriendListOperation> provideServlet(OTDriver driver) {
+		return DynamicOTNodeServlet.create(driver, createOTSystem(), FRIEND_LIST_CODEC, REPOSITORY_NAME);
 	}
 
 }

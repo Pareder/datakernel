@@ -3,7 +3,6 @@ package io.global.chat.chatroom;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
-import io.datakernel.eventloop.Eventloop;
 import io.global.chat.DynamicOTNodeServlet;
 import io.global.ot.client.OTDriver;
 
@@ -15,7 +14,7 @@ public final class RoomModule extends AbstractModule {
 
 	@Provides
 	@Singleton
-	DynamicOTNodeServlet<ChatMultiOperation> provideServlet(Eventloop eventloop, OTDriver driver) {
-		return DynamicOTNodeServlet.create(eventloop, driver, createMergedOTSystem(), CODEC, ROOM_PREFIX);
+	DynamicOTNodeServlet<ChatMultiOperation> provideServlet(OTDriver driver) {
+		return DynamicOTNodeServlet.create(driver, createMergedOTSystem(), CODEC, ROOM_PREFIX);
 	}
 }

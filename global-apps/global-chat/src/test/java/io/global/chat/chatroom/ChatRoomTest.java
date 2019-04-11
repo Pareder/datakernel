@@ -62,10 +62,9 @@ public class ChatRoomTest {
 		OTCommit<CommitId, ChatMultiOperation> root = await(repository.createCommit(0, emptyMap(), 1));
 		await(repository.pushAndUpdateHead(root));
 		await(repository.saveSnapshot(root.getId(), emptyList()));
-		OTAlgorithms<CommitId, ChatMultiOperation> algorithms = OTAlgorithms.create(eventloop, createMergedOTSystem(), repository);
 
-		OTSystem<ChatMultiOperation> otSystem = algorithms.getOtSystem();
-		OTNode<CommitId, ChatMultiOperation, OTCommit<CommitId, ChatMultiOperation>> otNode = algorithms.getOtNode();
+		OTSystem<ChatMultiOperation> otSystem = createMergedOTSystem();
+		OTNode<CommitId, ChatMultiOperation, OTCommit<CommitId, ChatMultiOperation>> otNode = OTNodeImpl.create(repository, otSystem);
 		this.stateManager1 = OTStateManager.create(eventloop, otSystem, otNode, state1);
 		this.stateManager2 = OTStateManager.create(eventloop, otSystem, otNode, state2);
 	}
