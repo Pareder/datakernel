@@ -2,6 +2,7 @@ package io.global.chat;
 
 import io.datakernel.codec.StructuredCodec;
 import io.datakernel.exception.ParseException;
+import io.datakernel.ot.MergedOTSystem;
 import io.datakernel.ot.OTSystem;
 import io.global.chat.chatroom.ChatMultiOperation;
 import io.global.chat.chatroom.messages.MessagesOTSystem;
@@ -63,7 +64,7 @@ public final class Utils {
 	}
 
 	public static OTSystem<ChatMultiOperation> createMergedOTSystem() {
-		return OTSystem.mergeOtSystems(ChatMultiOperation::new,
+		return MergedOTSystem.mergeOtSystems(ChatMultiOperation::new,
 				ChatMultiOperation::getMessageOps, MessagesOTSystem.createOTSystem(),
 				ChatMultiOperation::getParticipantsOps, ParticipantsOTSystem.createOTSystem(),
 				ChatMultiOperation::getRoomNameOps, RoomNameOTSystem.createOTSystem());

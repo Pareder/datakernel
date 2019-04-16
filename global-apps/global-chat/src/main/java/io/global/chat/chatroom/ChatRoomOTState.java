@@ -70,6 +70,11 @@ public final class ChatRoomOTState implements OTState<ChatMultiOperation> {
 		this.roomName = newRoomName;
 	}
 
+	public boolean isEmpty() {
+		return roomName.equals("") &&
+				participants.isEmpty() &&
+				messages.isEmpty();
+	}
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
