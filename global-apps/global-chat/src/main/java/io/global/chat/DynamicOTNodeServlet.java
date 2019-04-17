@@ -53,14 +53,12 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 
 	private MiddlewareServlet getServlet() {
 		return MiddlewareServlet.create()
-				.with(GET, "/" + CHECKOUT, request -> getNode(request)
-						.then(OTNodeImpl::checkout)
+				.with(GET, "/" + CHECKOUT, request -> getNode(request).checkout()
 						.map(checkoutData -> jsonResponse(fetchDataCodec, checkoutData)))
 				.with(GET, "/" + FETCH, request -> {
 					try {
 						CommitId currentCommitId = fromJson(COMMIT_ID_CODEC, request.getQueryParameter("id"));
-						return getNode(request)
-								.then(node -> node.fetch(currentCommitId))
+						return getNode(request).fetch(currentCommitId)
 								.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
 					} catch (ParseException e) {
 						return Promise.ofException(e);
@@ -69,8 +67,7 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 				.with(GET, "/" + POLL, request -> {
 					try {
 						CommitId currentCommitId = fromJson(COMMIT_ID_CODEC, request.getQueryParameter("id"));
-						return getNode(request)
-								.then(node -> node.poll(currentCommitId))
+						return getNode(request).poll(currentCommitId)
 								.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
 					} catch (ParseException e) {
 						return Promise.ofException(e);
@@ -80,8 +77,7 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 						.then(body -> {
 							try {
 								FetchData<CommitId, D> fetchData = fromJson(fetchDataCodec, body.getString(UTF_8));
-								return getNode(request)
-										.then(node -> node.createCommit(fetchData.getCommitId(), fetchData.getDiffs(), fetchData.getLevel()))
+								return getNode(request).createCommit(fetchData.getCommitId(), fetchData.getDiffs(), fetchData.getLevel())
 										.map(commit -> {
 											assert commit.getSerializedData() != null;
 											return HttpResponse.ok200()
@@ -95,18 +91,18 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 							}
 						}))
 				.with(POST, "/" + PUSH, request -> request.getBody()
-						.then(body -> getNode(request)
-								.then(node -> {
-									try {
-										OTCommit<CommitId, D> commit = ((OTRepositoryAdapter<D>) node.getRepository()).parseRawBytes(body.getArray());
-										return node.push(commit)
-												.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
-									} catch (ParseException e) {
-										return Promise.<HttpResponse>ofException(e);
-									} finally {
-										body.recycle();
-									}
-								})));
+						.then(body -> {
+							try {
+								OTNodeImpl<CommitId, D, OTCommit<CommitId, D>> node = getNode(request);
+								OTCommit<CommitId, D> commit = ((OTRepositoryAdapter<D>) node.getRepository()).parseRawBytes(body.getArray());
+								return node.push(commit)
+										.map(fetchData -> jsonResponse(fetchDataCodec, fetchData));
+							} catch (ParseException e) {
+								return Promise.<HttpResponse>ofException(e);
+							} finally {
+								body.recycle();
+							}
+						}));
 	}
 
 	private static <T> HttpResponse jsonResponse(StructuredCodec<T> codec, T item) {
@@ -115,18 +111,14 @@ public final class DynamicOTNodeServlet<D> implements WithMiddleware {
 				.withBody(toJson(codec, item).getBytes(UTF_8));
 	}
 
-	private Promise<OTNodeImpl<CommitId, D, OTCommit<CommitId, D>>> getNode(HttpRequest request) {
-		try {
-			PrivKey privKey = PrivKey.fromString(request.getPathParameter("privKey"));
-			String suffix = request.getPathParameterOrNull("suffix");
-			String repositoryName = prefix + (suffix == null ? "" : ('/' + suffix));
-			RepoID repoID = RepoID.of(privKey, repositoryName);
-			MyRepositoryId<D> myRepositoryId = new MyRepositoryId<>(repoID, privKey, diffCodec);
-			OTRepositoryAdapter<D> adapter = new OTRepositoryAdapter<>(driver, myRepositoryId, emptySet());
-			return Promise.of(OTNodeImpl.create(adapter, otSystem));
-		} catch (ParseException e) {
-			return Promise.ofException(e);
-		}
+	private OTNodeImpl<CommitId, D, OTCommit<CommitId, D>> getNode(HttpRequest request) {
+		PrivKey privKey = request.get(PrivKey.class);
+		String suffix = request.getPathParameterOrNull("suffix");
+		String repositoryName = prefix + (suffix == null ? "" : ('/' + suffix));
+		RepoID repoID = RepoID.of(privKey, repositoryName);
+		MyRepositoryId<D> myRepositoryId = new MyRepositoryId<>(repoID, privKey, diffCodec);
+		OTRepositoryAdapter<D> adapter = new OTRepositoryAdapter<>(driver, myRepositoryId, emptySet());
+		return OTNodeImpl.create(adapter, otSystem);
 	}
 
 	@Override

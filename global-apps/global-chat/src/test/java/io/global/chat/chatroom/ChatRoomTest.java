@@ -32,8 +32,8 @@ import java.util.Set;
 import static io.datakernel.async.TestUtils.await;
 import static io.datakernel.util.CollectionUtils.map;
 import static io.datakernel.util.CollectionUtils.set;
+import static io.global.chat.Utils.CHAT_ROOM_CODEC;
 import static io.global.chat.Utils.createMergedOTSystem;
-import static io.global.chat.chatroom.ChatMultiOperation.CODEC;
 import static io.global.chat.chatroom.messages.MessageOperation.insert;
 import static io.global.common.BinaryDataFormats.REGISTRY;
 import static io.global.common.SignedData.sign;
@@ -82,11 +82,11 @@ public class ChatRoomTest {
 
 		repository1 = new OTRepositoryAdapter<>(
 				driver,
-				new MyRepositoryId<>(repoID1, keys1.getPrivKey(), CODEC),
+				new MyRepositoryId<>(repoID1, keys1.getPrivKey(), CHAT_ROOM_CODEC),
 				singleton(repoID2));
 		repository2 = new OTRepositoryAdapter<>(
 				driver,
-				new MyRepositoryId<>(repoID2, keys2.getPrivKey(), CODEC),
+				new MyRepositoryId<>(repoID2, keys2.getPrivKey(), CHAT_ROOM_CODEC),
 				singleton(repoID1));
 
 		stateManager1 = OTStateManager.create(eventloop, otSystem, OTNodeImpl.create(repository1, otSystem), state1);
@@ -99,7 +99,7 @@ public class ChatRoomTest {
 	@Test
 	public void testRepoSynchronizationSingleMessage() {
 		ChatMultiOperation diffs1 = ChatMultiOperation.create()
-				.withMessageOps(insert(time++, "User 1", "Hello"));
+				.withMessageOps(insert(new Message(time++, "User 1", "Hello")));
 
 		stateManager1.add(diffs1);
 
@@ -111,17 +111,17 @@ public class ChatRoomTest {
 	@Test
 	public void testRepoSynchronizationMultipleMessages() {
 		ChatMultiOperation diffs1 = ChatMultiOperation.create()
-				.withMessageOps(insert(time++, "User 1", "Hello"));
+				.withMessageOps(insert(new Message(time++, "User 1", "Hello")));
 
 		ChatMultiOperation diffs2 = ChatMultiOperation.create()
-				.withMessageOps(insert(time++, "User 1", "From user 1"));
+				.withMessageOps(insert(new Message(time++, "User 1", "From user 1")));
 
 		stateManager1.addAll(asList(diffs1, diffs2));
 
 		ChatMultiOperation diffs3 = ChatMultiOperation.create()
 				.withMessageOps(
-						insert(time++, "User 2", "Hi"),
-						insert(time++, "User 2", "From user 2")
+						insert(new Message(time++, "User 2", "Hi")),
+						insert(new Message(time++, "User 2", "From user 2"))
 				);
 
 		stateManager2.add(diffs3);

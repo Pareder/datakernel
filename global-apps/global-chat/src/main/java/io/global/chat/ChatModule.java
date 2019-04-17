@@ -37,9 +37,9 @@ public final class ChatModule extends AbstractModule {
 			DynamicOTNodeServlet<ChatMultiOperation> roomServlet
 	) {
 		return MiddlewareServlet.create()
-				.with("/friendList/:privKey", friendsListServlet)
-				.with("/roomList/:privKey", roomListServlet)
-				.with("/room/:suffix/:privKey", roomServlet);
+				.with("/friendList", friendsListServlet)
+				.with("/roomList", roomListServlet)
+				.with("/room/:suffix", roomServlet);
 	}
 
 	@Provides

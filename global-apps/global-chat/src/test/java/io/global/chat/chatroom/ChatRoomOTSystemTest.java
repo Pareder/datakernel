@@ -6,7 +6,6 @@ import io.datakernel.stream.processor.DatakernelRunner;
 import io.datakernel.time.CurrentTimeProvider;
 import io.global.chat.chatroom.messages.Message;
 import io.global.common.KeyPair;
-import io.global.common.PubKey;
 import io.global.common.RawServerId;
 import io.global.common.SimKey;
 import io.global.common.discovery.LocalDiscoveryService;
@@ -26,11 +25,9 @@ import org.junit.runner.RunWith;
 import java.util.Iterator;
 
 import static io.datakernel.async.TestUtils.await;
-import static io.datakernel.util.CollectionUtils.set;
+import static io.global.chat.Utils.CHAT_ROOM_CODEC;
 import static io.global.chat.Utils.createMergedOTSystem;
-import static io.global.chat.chatroom.ChatMultiOperation.CODEC;
 import static io.global.chat.chatroom.messages.MessageOperation.insert;
-import static io.global.chat.chatroom.participants.AddParticipants.add;
 import static io.global.chat.chatroom.roomname.ChangeRoomName.changeName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
@@ -40,8 +37,6 @@ import static org.junit.Assert.*;
 public class ChatRoomOTSystemTest {
 	private final String auth1 = "author1";
 	private final String auth2 = "author2";
-	private final PubKey pubKey1 = KeyPair.generate().getPubKey();
-	private final PubKey pubKey2 = KeyPair.generate().getPubKey();
 	private OTStateManager<CommitId, ChatMultiOperation> stateManager1;
 	private OTStateManager<CommitId, ChatMultiOperation> stateManager2;
 	private ChatRoomOTState state1 = new ChatRoomOTState();
@@ -53,7 +48,7 @@ public class ChatRoomOTSystemTest {
 		Eventloop eventloop = Eventloop.getCurrentEventloop();
 		KeyPair keys = KeyPair.generate();
 		RepoID repoID = RepoID.of(keys, "Test");
-		MyRepositoryId<ChatMultiOperation> myRepositoryId = new MyRepositoryId<>(repoID, keys.getPrivKey(), CODEC);
+		MyRepositoryId<ChatMultiOperation> myRepositoryId = new MyRepositoryId<>(repoID, keys.getPrivKey(), CHAT_ROOM_CODEC);
 		LocalDiscoveryService discoveryService = LocalDiscoveryService.create(eventloop, new InMemoryAnnouncementStorage(),
 				new InMemorySharedKeyStorage());
 		OTDriver driver = new OTDriver(GlobalOTNodeImpl.create(eventloop, new RawServerId("test"), discoveryService,
@@ -73,34 +68,28 @@ public class ChatRoomOTSystemTest {
 	public void test() {
 		await(stateManager1.checkout(), stateManager2.checkout());
 
-		stateManager1.add(ChatMultiOperation.create().withParticipantsOps(add(singleton(pubKey1))));
-		stateManager2.add(ChatMultiOperation.create().withParticipantsOps(add(singleton(pubKey2))));
 		stateManager1.add(ChatMultiOperation.create().withRoomNameOps(changeName(state1.getRoomName(), "My Room 1", timestamp())));
 		stateManager2.add(ChatMultiOperation.create().withRoomNameOps(changeName(state2.getRoomName(), "My Room 2", timestamp())));
 
 		sync();
 
-		assertEquals(set(pubKey1, pubKey2), state1.getParticipants());
-		assertEquals(set(pubKey1, pubKey2), state2.getParticipants());
-
 		System.out.println(state1.getRoomName());
 		System.out.println(state2.getRoomName());
 
 		stateManager1.add(ChatMultiOperation.create().withMessageOps(
-				insert(timestamp(), auth1, "Hello"),
-				insert(timestamp(), auth1, "How are you?")
+				insert(new Message(timestamp(), auth1, "Hello")),
+				insert(new Message(timestamp(), auth1, "How are you?"))
 		));
 
 		stateManager2.add(ChatMultiOperation.create().withMessageOps(
-				insert(timestamp(), auth2, "Test"),
-				insert(timestamp(), auth2, "Message")
+				insert(new Message(timestamp(), auth2, "Test")),
+				insert(new Message(timestamp(), auth2, "Message"))
 		));
 
 		sync();
 
 		assertEquals(state1, state2);
 		assertEquals("My Room 2", state1.getRoomName());
-		assertEquals(set(pubKey1, pubKey2), state1.getParticipants());
 		Iterator<Message> iterator = state1.getMessages().iterator();
 		asList(
 				new Message(0, auth1, "Hello"),

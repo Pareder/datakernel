@@ -23,6 +23,10 @@ public class Message {
 		return content;
 	}
 
+	public boolean isEmpty() {
+		return content.equals("");
+	}
+
 	public boolean equalsWithoutTimestamp(Message other) {
 		if (!author.equals(other.author)) return false;
 		if (!content.equals(other.content)) return false;

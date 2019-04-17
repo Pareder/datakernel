@@ -16,18 +16,17 @@
 
 package io.global.ot.chat.operations;
 
+import io.global.chat.chatroom.messages.Message;
 import io.global.chat.chatroom.messages.MessageOperation;
 
 import java.util.function.Function;
 
-import static io.global.common.CryptoUtils.toHexString;
-import static java.util.Collections.singletonList;
-
 public final class Utils {
 	public static final int CONTENT_MAX_LENGTH = 10;
 	public static final Function<MessageOperation, String> DIFF_TO_STRING = op -> {
-		String author = op.getAuthor();
-		String allContent = op.getContent();
+		Message message = op.getMessage();
+		String author = message.getAuthor();
+		String allContent = message.getContent();
 		String content = allContent.length() > CONTENT_MAX_LENGTH ?
 				(allContent.substring(0, CONTENT_MAX_LENGTH) + "...") :
 				allContent;
