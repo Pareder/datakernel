@@ -12,7 +12,6 @@ import io.global.common.PubKey;
 import io.global.ot.api.CommitId;
 import io.global.ot.client.MyRepositoryId;
 import io.global.ot.service.UserContainer;
-import io.global.ot.shared.SharedRepo;
 import io.global.ot.shared.SharedReposOTState;
 import io.global.ot.shared.SharedReposOperation;
 import io.global.pm.GlobalPmDriver;
@@ -76,7 +75,7 @@ public final class MessagingService implements EventloopService {
 		MyRepositoryId<?> myRepositoryId = userContainer.getMyRepositoryId();
 		PrivKey senderPrivKey = myRepositoryId.getPrivKey();
 		PubKey senderPubKey = senderPrivKey.computePubKey();
-		CreateSharedRepo payload = new CreateSharedRepo(new SharedRepo(id, participants));
+		CreateSharedRepo payload = new CreateSharedRepo(id, participants);
 		Message<CreateSharedRepo> message = Message.now(senderPubKey, payload);
 		return pmDriver.send(senderPrivKey, receiver, mailBox, message);
 	}
@@ -91,25 +90,24 @@ public final class MessagingService implements EventloopService {
 
 		repeat(() -> eitherComplete(messagesSupplier.get(), stopPromise)
 				.then(message -> {
-					if (message != null) {
-						CreateSharedRepo createSharedRepo = message.getPayload();
-						SharedRepo sharedRepo = createSharedRepo.getSharedRepo();
-						return Promise.complete()
-								.then($ -> {
-									if (!state.getSharedRepos().contains(sharedRepo)) {
-										SharedReposOperation createOp = SharedReposOperation.create(sharedRepo);
-										stateManager.add(createOp);
-										return stateManager.sync()
-												.whenException(e -> stateManager.reset());
-									} else {
-										return Promise.complete();
-									}
-								})
-								.then($ -> pmDriver.drop(keys, mailBox, message.getId()))
-								.toTry()
-								.toVoid();
+					if (message == null) {
+						return Promises.delay(Promise.complete(), POLL_INTERVAL);
 					}
-					return Promises.delay(Promise.complete(), POLL_INTERVAL);
+					CreateSharedRepo createSharedRepo = message.getPayload();
+					return Promise.complete()
+							.then($ -> {
+								String id = createSharedRepo.getId();
+								if (state.getSharedRepos().containsKey(id)) {
+									return Promise.complete();
+								}
+								SharedReposOperation createOp = SharedReposOperation.create(id, createSharedRepo.getParticipants());
+								stateManager.add(createOp);
+								return stateManager.sync()
+										.whenException(e -> stateManager.reset());
+							})
+							.then($ -> pmDriver.drop(keys, mailBox, message.getId()))
+							.toTry()
+							.toVoid();
 				}));
 	}
 

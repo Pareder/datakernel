@@ -15,7 +15,7 @@ class RoomList extends React.Component {
         <p>Loading...</p> :
         <div>
           <ul>
-            {this.props.roomsService.state.rooms.map(value => <RoomItem room={value} roomsService={this.props.roomsService}/>)}
+            {this.props.roomsService.state.rooms.map(value => <RoomItem id={value.id} roomsService={this.props.roomsService}/>)}
           </ul>
           <CreateRoomForm roomsService={this.props.roomsService}/>
         </div>

@@ -1,24 +1,22 @@
 import React from "react";
 import path from "path";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItem from "@material-ui/core/ListItem";
 
 class RoomItem extends React.Component {
-  constructor(){
-    super();
+  constructor(props){
+    super(props);
     this.quitRoom = this.quitRoom.bind(this);
   }
 
   quitRoom(){
-    this.props.roomsService.quitRoom(this.props.room.id);
+    this.props.roomsService.quitRoom(this.props.id);
   }
 
   render() {
-    let roomID = this.props.room.id;
+    let {id} = this.props;
 
     return <li>
-      <a href={path.join('/room', roomID)}>
-        {roomID.substring(0, 8)}
+      <a href={path.join('/room', id)}>
+        {id.substring(0, 8)}
       </a>
       <button onClick={this.quitRoom}>
         Quit

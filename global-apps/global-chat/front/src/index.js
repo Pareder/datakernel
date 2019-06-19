@@ -28,7 +28,7 @@ const contactsOTNode = ClientOTNode.createWithJsonKey({
   serializer: contactsSerializer
 });
 
-const roomsOTStateManager = new OTStateManager(() => new Set(), roomsOTNode, roomsOTSystem);
+const roomsOTStateManager = new OTStateManager(() => new Map(), roomsOTNode, roomsOTSystem);
 const contactsOTStateManager = new OTStateManager(() => new Map(), contactsOTNode, contactsOTSystem);
 const roomsService = new RoomsService(roomsOTStateManager, '/rooms');
 const contactsService = new ContactsService(contactsOTStateManager);

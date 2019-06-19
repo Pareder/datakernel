@@ -1,4 +1,5 @@
 import Service from '../../common/Service';
+import RoomsOTOperation from "./ot/RoomsOTOperation";
 
 const RETRY_CHECKOUT_TIMEOUT = 1000;
 
@@ -34,23 +35,28 @@ class RoomsService extends Service {
     this._roomsOTStateManager.removeChangeListener(this._onStateChange);
   }
 
-  createRoom(participants) {
-    return fetch(this._messagingURL + '/add', {
-      method: 'POST',
-      body: JSON.stringify(participants)
-    })
-      .then(response => {
-        if (response.status >= 400 && response.status < 600) {
-          throw new Error("Bad response from server");
-        }
-      });
+  async createRoom(participants) {
+    const addRoomOperation = new RoomsOTOperation([{
+      id: Math.random().toString(16).substr(2),
+      participants: participants,
+      remove: false
+    }]);
+    this._roomsOTStateManager.add([addRoomOperation]);
+    await this._sync();
   }
 
-  quitRoom(id) {
-    return fetch(this._messagingURL + '/delete', {
-      method: 'POST',
-      body: JSON.stringify(id)
-    });
+  async quitRoom(id) {
+    let room = this.state.rooms.find(room => room.id === id);
+    if (!room){
+      throw new Error("Unknown room ID");
+    }
+    const removeRoomOperation = new RoomsOTOperation([{
+      id: id,
+      participants: room.participants,
+      remove: true
+    }]);
+    this._roomsOTStateManager.add([removeRoomOperation]);
+    await this._sync();
   }
 
   _onStateChange = () => {
@@ -61,10 +67,14 @@ class RoomsService extends Service {
   };
 
   _getRoomsFromStateManager() {
-    const otState = this._roomsOTStateManager.getState();
-    return [...otState]
+    return Array.from(this._roomsOTStateManager.getState())
       .sort()
-      .map(key => JSON.parse(key));
+      .map(entry => {
+        return {
+          id: entry[0],
+          participants: entry[1].participants
+        };
+      });
   }
 
   _reconnectDelay() {

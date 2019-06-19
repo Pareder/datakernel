@@ -1,36 +1,34 @@
-import Room from "./Room";
-
 class RoomsOTOperation {
-  constructor(room, remove) {
-    this.room = room;
-    this.remove = remove;
+  constructor(rooms) {
+    this.rooms = rooms;
   }
 
-  static EMPTY = new RoomsOTOperation(new Room('', []), false);
-
   apply(state) {
-    const key = JSON.stringify(this.room);
-
-    if (this.remove) {
-      state.delete(key);
-    } else {
-      state.add(key);
-    }
+    this.rooms.forEach(el => {
+      if (el.remove) {
+        state.delete(el.id);
+      } else {
+        state.set(el.id, {
+          participants: el.participants
+        })
+      }
+    });
 
     return state;
   }
 
   isEmpty() {
-    return this.room.isEmpty();
+    return this.rooms.every(el => el.participants.length === 0);
   }
 
   invert() {
-    return new RoomsOTOperation(this.room, !this.remove);
+    return new RoomsOTOperation(this.rooms.map(room => ({
+      id: room.id,
+      participants: room.participants,
+      remove: !room.remove
+    })));
   }
 
-  isEqual(chatOTOperation) {
-    return chatOTOperation.room.isEqual(this.room) && chatOTOperation.remove === this.remove;
-  }
 }
 
 export default RoomsOTOperation;

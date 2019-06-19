@@ -1,43 +1,88 @@
 package io.global.ot.shared;
 
-import static java.util.Collections.emptySet;
+import io.global.common.PubKey;
+
+import java.util.Map;
+import java.util.Set;
+
+import static io.datakernel.util.CollectionUtils.map;
+import static java.util.stream.Collectors.toMap;
 
 public class SharedReposOperation {
-	public static final SharedReposOperation EMPTY = new SharedReposOperation(new SharedRepo("", emptySet()), true);
+	private final Map<String, SharedRepo> sharedRepos;
 
-	private final SharedRepo sharedRepo;
-	private final boolean remove;
-
-	public SharedReposOperation(SharedRepo sharedRepo, boolean remove) {
-		this.sharedRepo = sharedRepo;
-		this.remove = remove;
+	public SharedReposOperation(Map<String, SharedRepo> sharedRepos) {
+		this.sharedRepos = sharedRepos;
 	}
 
-	public static SharedReposOperation create(SharedRepo sharedRepo) {
-		return new SharedReposOperation(sharedRepo, false);
+	public static SharedReposOperation of(String id, SharedRepo repo) {
+		return new SharedReposOperation(map(id, repo));
 	}
 
-	public static SharedReposOperation delete(SharedRepo sharedRepo) {
-		return new SharedReposOperation(sharedRepo, true);
+	public static SharedReposOperation create(String id, Set<PubKey> participants) {
+		return of(id, new SharedRepo(participants, false));
+	}
+
+	public static SharedReposOperation delete(String id, Set<PubKey> participants) {
+		return of(id, new SharedRepo(participants, true));
 	}
 
 	public SharedReposOperation invert() {
-		return new SharedReposOperation(sharedRepo, !remove);
+		return new SharedReposOperation(sharedRepos.entrySet().stream()
+				.collect(toMap(Map.Entry::getKey, e -> e.getValue().invert())));
 	}
 
 	public boolean isEmpty() {
-		return sharedRepo.getParticipants().isEmpty();
+		return sharedRepos.isEmpty();
 	}
 
-	public boolean isRemove() {
-		return remove;
+	public Map<String, SharedRepo> getSharedRepos() {
+		return sharedRepos;
 	}
 
-	public SharedRepo getSharedRepo() {
-		return sharedRepo;
-	}
+	public static class SharedRepo {
+		private final Set<PubKey> participants;
+		private final boolean remove;
 
-	public boolean isInversionFor(SharedReposOperation other) {
-		return sharedRepo.equals(other.sharedRepo) && remove != other.remove;
+		public SharedRepo(Set<PubKey> participants, boolean remove) {
+			this.participants = participants;
+			this.remove = remove;
+		}
+
+		public Set<PubKey> getParticipants() {
+			return participants;
+		}
+
+		public boolean isRemove() {
+			return remove;
+		}
+
+		public SharedRepo invert() {
+			return new SharedRepo(participants, !remove);
+		}
+
+		public boolean isInversion(SharedRepo other) {
+			return participants.equals(other.participants) && remove != other.remove;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+
+			SharedRepo that = (SharedRepo) o;
+
+			if (remove != that.remove) return false;
+			if (!participants.equals(that.participants)) return false;
+
+			return true;
+		}
+
+		@Override
+		public int hashCode() {
+			int result = participants.hashCode();
+			result = 31 * result + (remove ? 1 : 0);
+			return result;
+		}
 	}
 }

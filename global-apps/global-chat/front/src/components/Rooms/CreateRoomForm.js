@@ -16,7 +16,7 @@ class CreateRoomForm extends React.Component {
   handleSubmit(event) {
     event.preventDefault();
     let value = this.state.value;
-    this.props.roomsService.createRoom([value])
+    this.props.roomsService.createRoom(value.split(','))
       .catch(e => this.setState({error: e}))
   }
 

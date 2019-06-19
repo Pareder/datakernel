@@ -13,7 +13,6 @@ import io.global.ot.client.OTDriver;
 import io.global.ot.client.RepoSynchronizer;
 import io.global.ot.service.UserContainer;
 import io.global.ot.service.messaging.MessagingService;
-import io.global.ot.shared.SharedRepo;
 import io.global.ot.shared.SharedReposOTState;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,22 +51,22 @@ public final class SynchronizationService<D> implements EventloopService {
 	@Override
 	public MaterializedPromise<Void> start() {
 		SharedReposOTState resourceListState = userContainer.getResourceListState();
-		Set<SharedRepo> sharedRepos = resourceListState.getSharedRepos();
-		sharedRepos.forEach(resource -> {
-					ensureSynchronizer(resource.getId()).sync(resource.getParticipants());
-					sendMessageToParticipants(resource);
+		Map<String, Set<PubKey>> sharedRepos = resourceListState.getSharedRepos();
+		sharedRepos.forEach((id, participants) -> {
+			ensureSynchronizer(id).sync(participants);
+			sendMessageToParticipants(id, participants);
 				}
 		);
 
-		resourceListState.setListener(sharedReposOperation -> {
-			SharedRepo sharedRepo = sharedReposOperation.getSharedRepo();
-			if (sharedReposOperation.isRemove()) {
-				synchronizers.remove(sharedRepo.getId()).stop();
-			} else {
-				ensureSynchronizer(sharedRepo.getId()).sync(sharedRepo.getParticipants());
-				sendMessageToParticipants(sharedRepo);
-			}
-		});
+		resourceListState.setListener(sharedReposOperation -> sharedReposOperation.getSharedRepos()
+				.forEach((id, repo) -> {
+					if (repo.isRemove()) {
+						synchronizers.remove(id).stop();
+					} else {
+						ensureSynchronizer(id).sync(repo.getParticipants());
+						sendMessageToParticipants(id, repo.getParticipants());
+					}
+				}));
 
 		return Promise.complete();
 	}
@@ -91,24 +90,18 @@ public final class SynchronizationService<D> implements EventloopService {
 		return new MyRepositoryId<>(repoId, myRepositoryId.getPrivKey(), myRepositoryId.getDiffCodec());
 	}
 
-	public void sendMessageToParticipants(SharedRepo sharedRepo) {
+	public void sendMessageToParticipants(String id, Set<PubKey> participants) {
 		RepoID repoId = userContainer.getMyRepositoryId().getRepositoryId();
 		MessagingService messagingService = userContainer.getMessagingService();
-		Set<PubKey> participants = sharedRepo.getParticipants();
-		String id = sharedRepo.getId();
 		Promises.all(participants.stream()
-				.filter(participant -> !sharedRepo.isMessageSent(participant) &&
-						!participant.equals(repoId.getOwner()))
+				.filter(participant -> !participant.equals(repoId.getOwner()))
 				.map(participant ->
 						driver.getHeads(RepoID.of(participant, repoId + "/" + id))
 								.whenComplete((heads, e) -> {
-									if (e == null && !heads.isEmpty() && !first(heads).isRoot()) {
-										sharedRepo.setMessageSent(participant);
-									} else {
+									if (e != null || heads.isEmpty() || first(heads).isRoot()) {
 										retry(() -> messagingService
 												.sendCreateMessage(participant, id, participants))
-												.get()
-												.whenResult($ -> sharedRepo.setMessageSent(participant));
+												.get();
 									}
 								})));
 	}
