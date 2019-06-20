@@ -27,10 +27,6 @@ class AccountService extends Service {
     })
   }
 
-  async authByAppStore() {
-    // TODO
-  }
-
   logout() {
     this._cookies.remove('Key');
 

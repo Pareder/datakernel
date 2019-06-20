@@ -8,6 +8,7 @@
     "classnames": "2.2.6",
     "js-cookie": "^2.2.0",
     "ot-core": "https://github.com/softindex/ot-core.git#v0.2.1",
+    "query-string": "^6.7.0",
     "react": "^16.7.0",
     "react-app-rewire-workbox": "^2.0.1",
     "react-app-rewired": "^2.0.2",

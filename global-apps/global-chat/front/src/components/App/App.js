@@ -4,6 +4,7 @@ import MainScreen from "../MainScreen";
 import SignUp from "../SignUp";
 import Authorization from "../Authorization";
 import Chat from "../ChatRoom/ChatRoom";
+import ComeBack from "../ComeBack";
 
 class App extends React.Component {
   render() {
@@ -12,6 +13,7 @@ class App extends React.Component {
         <Route path="/rooms" component={MainScreen}/>
         <Route path="/room/**" component={Chat}/>
         <Route exact={true} path="/sign-up" component={SignUp}/>
+        <Route exact={true} path="/comeback" component={ComeBack}/>
         <Route exact={true} path="/" component={Authorization}/>
       </Switch>
     </Router>;
