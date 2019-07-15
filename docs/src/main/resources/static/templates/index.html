@@ -2,364 +2,88 @@
 <!--suppress CheckImageSize, HtmlUnknownTarget -->
 <html>
 <head>
-    <link rel='stylesheet' href="/static/css/bootstrap.min.css"/>
-    <link rel='stylesheet' href='/static/css/pygment_trac.css'/>
-    <link rel='stylesheet' href='/static/css/style.css'/>
-    <link href='http://fonts.googleapis.com/css?family=Lato:400,300,700,400italic' rel='stylesheet' type='text/css'/>
-    <title>DataKernel Framework | DataKernel</title>
-    <meta name="description"
-          content="Java components for building extremely fast and scalable applications with asynchronous I/O.">
-    <meta name="keywords"
-          content="java,netty,nodejs,akka,coralblocks,vertx,nginx,asynchronous,async,eventloop,actor,reactor pattern,java nio,reactive streams,reactive java,rx-java,java-stream,embedded http,java http server,java http client,java dns client,high load,streams,serializers,http,olap">
-    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
+  <link rel='stylesheet' href="/static/css/bootstrap.min.css"/>
+  <link rel='stylesheet' href='/static/css/pygment_trac.css'/>
+  <link rel='stylesheet' href='/static/css/style.css'/>
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,300,700,400italic' rel='stylesheet' type='text/css'/>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.15.8/build/styles/default.min.css">
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.15.8/build/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-45655849-10"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
+  <title>DataKernel Framework | DataKernel</title>
+  <meta name="description"
+        content="Java components for building extremely fast and scalable applications with asynchronous I/O.">
+  <meta name="keywords"
+        content="java,netty,nodejs,akka,coralblocks,vertx,nginx,asynchronous,async,eventloop,actor,reactor pattern,java nio,reactive streams,reactive java,rx-java,java-stream,embedded http,java http server,java http client,java dns client,high load,streams,serializers,http,olap">
+  <meta http-equiv='Content-Type' content='text/html; charset=utf-8'/>
 
-        function gtag() {
-            dataLayer.push(arguments);
-        }
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-45655849-10"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
 
-        gtag('js', new Date());
+    function gtag() {
+      dataLayer.push(arguments);
+    }
 
-        gtag('config', 'UA-45655849-10');
-    </script>
+    gtag('js', new Date());
+
+    gtag('config', 'UA-45655849-10');
+  </script>
 </head>
 <body>
 <div class="page-row">
-    <nav class="navbar-inverse home-menu">
-        <div class="container-fluid container">
-            <div class="collapse navbar-collapse">
-                <ul class="nav navbar-nav">
-                    <li class="active"><a href="/">Home</a></li>
-                    <li><a href="/core">Core</a></li>
-                    <li><a href="/cloud">Cloud</a></li>
-                    <li><a href="/global-cloud">Global Cloud</a></li>
-                    <li><a href="/CREATE">CREATE</a></li>
-                </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    <li><a href="http://uikernel.io">UIKernel</a></li>
-                    <li><a href="http://adkernel.com">AdKernel</a></li>
-                    <li><a href="http://github.com/softindex/datakernel">Github</a></li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="home-logo">
-        <center>
-            <img src="/static/images/logo-icon.png" width="240px" alt="logo"/>
-            <br>
-            <br>
-            <div class="actions">
-                <a href="/core/tutorials/getting-started" class="btn btn-lg">Get Started</a>
-                <a href="http://github.com/softindex/datakernel" class="btn btn-lg">
-                    <img src="/static/images/github-inverse.png" alt="logo"/>GitHub</a>
-            </div>
-        </center>
+  <nav class="navbar-inverse home-menu">
+    <div class="container-fluid container">
+      <div class="collapse navbar-collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="/">Home</a></li>
+          <li><a href="/core">Core</a></li>
+          <li><a href="/cloud">Cloud</a></li>
+          <li><a href="/global-cloud">Global Cloud</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><a href="http://uikernel.io">UIKernel</a></li>
+          <li><a href="http://adkernel.com">AdKernel</a></li>
+          <li><a href="http://github.com/softindex/datakernel">Github</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="container content">
-        <div class="page-row page-row-expanded">
-            <div class="home-modules markdown-content">
-                <center>
-                    <h2>Lightweight asynchronous framework for efficient and scalable web, network and big data
-                        solutions</h2>
-                </center>
-                <div class="landing-description">
-                    <div class="landing-region">
-                        <h3>Alternative to conventional frameworks</h3>
-                        DataKernel is a full-featured alternative web and big data Java framework. It does <b>not</b>
-                        use Netty, Jetty, Spring/Guice DI, RxJava etc. Instead, it features complete application
-                        stack: Event Loop, Promises, HTTP, DI and others, including decentralized
-                        big-data technologies and map-reduce algorithms.
-                        <br>
-                        <br>
-                        DataKernel main goal is to free projects from the frameworks which restrict developers with
-                        redundant standards and boilerplates. Get yourself a true freedom to express
-                        yourself as a developer - create projects and concentrate on their business logic instead
-                        of learning framework specifications.
-                    </div>
-                    <h3>DataKernel structure</h3>
-                    DataKernel consists of stack of loosely coupled components which perfectly complement
-                    and empower each other. It’s much more than the sum of the parts.
-                    <div class="row nowrap">
-                        <div class="module-title">
-                            <h2><a href="/docs/core/">Core</a></h2>
-                            <div class="stability-2">Stable</div>
-                            Building blocks of the framework and everything you need to create web applications:
-                            Node.js-inspired Promises and Eventloop, fast
-                            serializers, bytecode generators, HTTP and TCP servers, integration with UIKernel JS
-                            front-end
-                            library.
-                        </div>
-                        <div class="module-title">
-                            <h2><a href="/docs/cloud/">Cloud</a></h2>
-                            <div class="stability-2">Stable</div>
-                            Components for decentralized cloud solutions of different complexity: from small private
-                            file storage
-                            to high-loaded OLAP Cube systems. Also includes Operational Transformations, CRDT and RPC
-                            implementations.
-                        </div>
-                        <div class="module-title">
-                            <h2><a href="/docs/global/">Global Cloud</a></h2>
-                            <div class="stability-0">WIP</div>
-                            Technologies for ultimately scalable, decentralized, yet practical and
-                            high-performance cloud solutions with implementation of data
-                            authenticity and encryption. BitTorrent and Blockchain alternatives.
-                        </div>
-                    </div>
+  </nav>
 
-                    <div class="landing-region">
-                        <h3>Why choose DataKernel:</h3>
-                        <div class="reasons-row">
-                            <div class="reasons-block">
-                                <h4>Best technologies</h4>
-                                DataKernel is legacy-free. Build application-specific embedded databases and
-                                high-performance
-                                HTTP/RPC servers using high-level abstractions, LSM-Tree, Operational Transformations,
-                                CRDT, Go-inspired CSP and other modern algorithms and technologies.
-                            </div>
-                            <div class="reasons-block">
-                                <h4>Explicit design</h4>
-                                There are no under-the-hood magic, endless XML configurations and dependency hell of
-                                third-party components glued together via layers of
-                                abstractions. DataKernel gives a full control over your applications.
-                            </div>
-                            <div class="reasons-block">
-                                <h4>Born to be async</h4>
-                                DataKernel allows you to create async web applications in a Node.js manner while
-                                preserving all of the Java
-                                advantages. We also use Node.js-inspired features, such as single-threaded async <a
-                                    href="https://datakernel.io/docs/core/promise.html">Promises</a> and
-                                <a href="https://datakernel.io/docs/core/eventloop.html">pool of event loops</a> as
-                                the building blocks of our framework.
-                            </div>
-                            <div class="reasons-block">
-                                <h4>No overweights</h4>
-                                To achieve the lowest GC footprint possible, we’ve designed thoroughly optimized core
-                                modules -
-                                improved Java ByteBuffer <a
-                                    href="https://datakernel.io/docs/core/bytebuf.html">ByteBuf</a>,
-                                minimalistic <a href="https://datakernel.io/docs/core/datastream.html">Datastreams</a>,
-                                stateless single-threaded <a href="https://datakernel.io/docs/core/promise.html">Promises</a>
-                                and
-                                also <a href="https://github.com/eishay/jvm-serializers/wiki">one of the</a> fastest
-                                <a href="https://datakernel.io/docs/core/serializer.html">Serializers</a> available
-                                nowadays.
-                            </div>
-                            <div class="reasons-block">
-                                <h4>Flexibility</h4>
-                                DataKernel has everything you need to create applications of different scales - from
-                                standalone high-performance async network solutions and HTTP web applications
-                                up to big-data cloud solutions and decentralized internet-wide applications.
-                            </div>
-                            <div class="reasons-block">
-                                <h4>Modern approach</h4>
-                                DataKernel has simple yet powerful set of abstractions with clean OOP design favoring
-                                Java 8+
-                                functional programming style. It also radically downplays Dependency Injection role,
-                                giving
-                                way to your business logic instead.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="landing-region" align="center">
-                        <h3>Comparison with other popular frameworks</h3>
-                        <br>
-                        <table>
-                            <tr>
-                                <td><b> </b></td>
-                                <td><b>DataKernel</b></td>
-                                <td><b>Spring</b></td>
-                                <td><b>Node.js</b></td>
-                                <td><b>Ruby on Rails</b></td>
-                                <td><b>Django</b></td>
-                            </tr>
-                            <tr>
-                                <td>Suitable for enterprise-level solutions</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                            </tr>
-                            <tr>
-                                <td>Low entry barrier level</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                            </tr>
-                            <tr>
-                                <td>Designed asynchronous</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">-</td>
-                            </tr>
-                            <tr>
-                                <td>Explicit specifications instead of implicit conventions</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">+</td>
-                            </tr>
-                            <tr>
-                                <td>Legacy-free, no third-party dependencies</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">+</td>
-                                <td align="center">±</td>
-                                <td align="center">±</td>
-                            </tr>
-                            <tr>
-                                <td>IDE friendly, statically-typed high-performance language</td>
-                                <td align="center">+</td>
-                                <td align="center">+</td>
-                                <td align="center">-</td>
-                                <td align="center">-</td>
-                                <td align="center">-</td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="row nowrap landing-region">
-                        <div class="landing-block-left">
-                            <h3>Create your applications simpler than ever before</h3>
-                            A set of predefined launchers and classes for typical use cases allows you to develop apps
-                            extremely fast. Create an async HTTP server in less than 15 lines of code with no
-                            additional configuration files.
-                        </div>
-                        <div class="landing-block-right">
-                            <figure class="highlight"><pre><code class="language-java" data-lang="java"><span
-                                    class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span
-                                    class="nc">HttpHelloWorldExample</span> <span class="kd">extends</span> <span
-                                    class="n">HttpServerLauncher</span> <span class="o">{</span>
-	<span class="nd">@Provides</span>
-	<span class="n">AsyncServlet</span> <span class="nf">servlet</span><span class="o">()</span> <span
-                                        class="o">{</span>
-		<span class="k">return</span> <span class="n">request</span> <span class="o">-&gt;</span> <span class="n">Promise</span><span
-                                        class="o">.</span><span class="na">of</span><span class="o">(</span><span
-                                        class="n">ok200</span><span class="o">()</span>
-		    <span class="o">.</span><span class="na">withPlainText</span><span class="o">(</span><span class="s">"Hello World"</span><span
-                                        class="o">));</span>
-	<span class="o">}</span>
-
-	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span
-                                        class="nf">main</span><span class="o">(</span><span class="n">String</span><span
-                                        class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span
-                                        class="kd">throws</span> <span class="n">Exception</span> <span
-                                        class="o">{</span>
-		<span class="n">Launcher</span> <span class="n">launcher</span> <span class="o">=</span> <span
-                                        class="k">new</span> <span class="n">HttpHelloWorldExample</span><span
-                                        class="o">();</span>
-		<span class="n">launcher</span><span class="o">.</span><span class="na">launch</span><span
-                                        class="o">(</span><span class="n">args</span><span class="o">);</span>
-	<span class="o">}</span>
-<span class="o">}</span></code></pre>
-                            </figure>
-                        </div>
-                    </div>
-                    <div class="row nowrap landing-region">
-                        <div class="landing-block-left-2">
-                            <h3>Dependency Injection: <br>Redefined</h3>
-                            DataKernel has an extremely lightweight DI with ground-breaking design principles. Besides
-                            lightning-fast launch, it is even more powerful: support of nested scopes, singletons,
-                            object factories, modules and plugins which allow to transform graph of dependencies at
-                            startup time, abstracting out all reflection. These plugins extensively use Java 8+
-                            functional-style programming: for binding definitions, user-defined binding transformations
-                            and binding generators. The entire runtime code of Injector consists of ~50 lines of code,
-                            with all binding definitions performed in startup time.
-                            <br>DataKernel DI has no dependencies on its own, so it can be used as a standalone
-                            component.
-                        </div>
-                        <div class="landing-block-right-2">
-                            <figure class="highlight"><pre><code class="language-java" data-lang="java"><span
-                                    class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span
-                                    class="nc">HelloWorldExample</span> <span class="kd">extends</span> <span class="n">Launcher</span> <span
-                                    class="o">{</span>
-
-	<span class="nd">@Inject</span>
-	<span class="n">String</span> <span class="n">message</span><span class="o">;</span>
-
-	<span class="nd">@Provides</span>
-	<span class="n">String</span> <span class="nf">message</span><span class="o">()</span> <span class="o">{</span>
-		<span class="k">return</span> <span class="s">"Hello, world!"</span><span class="o">;</span>
-	<span class="o">}</span>
-
-	<span class="nd">@Override</span>
-	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span
-                                        class="o">{</span>
-		<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span
-                                        class="na">println</span><span class="o">(</span><span
-                                        class="n">message</span><span class="o">);</span>
-	<span class="o">}</span>
-
-	<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span
-                                        class="nf">main</span><span class="o">(</span><span class="n">String</span><span
-                                        class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span
-                                        class="kd">throws</span> <span class="n">Exception</span> <span
-                                        class="o">{</span>
-		<span class="n">Launcher</span> <span class="n">launcher</span> <span class="o">=</span> <span
-                                        class="k">new</span> <span class="n">HelloWorldExample</span><span
-                                        class="o">();</span>
-		<span class="n">launcher</span><span class="o">.</span><span class="na">launch</span><span
-                                        class="o">(</span><span class="n">args</span><span class="o">);</span>
-
-	<span class="o">}</span>
-<span class="o">}</span></code></pre>
-                            </figure>
-                        </div>
-                    </div>
-                    <div class="landing-region">
-                        <h3>Production-ready technology</h3>
-                        DataKernel is a production-ready framework which constantly evolves and gets new updates. The
-                        essential DataKernel modules form the basis of diverse high-load applications processing
-                        billions of requests daily: ad-serving solutions, online analytics and web crawlers.
-                    </div>
-                    <div class="landing-region">
-                        <h3>Easy to start</h3>
-                        We did our best to make your first use of DataKernel as smooth as possible and created dozens of
-                        <a href="https://datakernel.io/docs/examples.html">examples</a> and
-                        <a href="https://datakernel.io/docs/tutorial/">tutorials</a> of different
-                        complexity, for both beginners and advanced Java developers.
-                        Try DataKernel right now by passing <a
-                            href="https://datakernel.io/docs/tutorial/getting-started.html">Getting-Started tutorial</a>.
-                        You can also explore <a href="https://datakernel.io/docs/docs.html">docs</a> to
-                        find out more about DataKernel modules.
-                        <br>
-                        It is also worth to note that due to the usage of Node.js-inspired features, DataKernel is a
-                        perfect framework to get started with Java if you are a JavaScript developer.
-                        <br>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="home-logo">
+    <center>
+      <img src="/static/images/logo-icon.png" width="240px" alt="logo"/>
+      <br>
+      <br>
+      <div class="actions">
+        <a href="/core/tutorials/getting-started" class="btn btn-lg">Get Started</a>
+        <a href="http://github.com/softindex/datakernel" class="btn btn-lg">
+          <img src="/static/images/github-inverse.png" alt="logo"/>GitHub</a>
+      </div>
+    </center>
+  </div>
+  <div class="container content">
+    <div class="page-row page-row-expanded">
+      <div class="home-modules markdown-content">
+        {{{page.pageContent}}}
+      </div>
     </div>
-
-</div>
-<div class="page-row page-row-expanded">
-    <div class="container content  home-modules markdown-content">
-        {{{Content}}}
-    </div>
+  </div>
 </div>
 
 <div class="page-row footer">
-    <div class="home-join">
-        <center>
-            <h2>Join the community</h2>
-            <div class="actions">
-                <a href="https://twitter.com/datakernel_io"><img src="/static/images/twitter.png" alt="twitter"/></a>
-                <a href="http://github.com/softindex/datakernel"><img src="/static/images/github.png" alt="github"/></a>
-            </div>
-        </center>
-    </div>
-    <div class="home-copyright">
-        Copyright (C) 2019 SoftIndex LLC. All Rights Reserved
-    </div>
+  <div class="home-join">
+    <center>
+      <h2>Join the community</h2>
+      <div class="actions">
+        <a href="https://twitter.com/datakernel_io"><img src="/static/images/twitter.png" alt="twitter"/></a>
+        <a href="http://github.com/softindex/datakernel"><img src="/static/images/github.png" alt="github"/></a>
+      </div>
+    </center>
+  </div>
+  <div class="home-copyright">
+    Copyright (C) 2019 SoftIndex LLC. All Rights Reserved
+  </div>
 </div>
 </body>
 </html>

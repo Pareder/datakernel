@@ -1,6 +1,6 @@
 package datakernel;
 
-import datakernel.module.database.MysqlDatabaseModule;
+import datakernel.module.file.FilesModule;
 import datakernel.module.servlet.ServletsModule;
 import io.datakernel.config.Config;
 import io.datakernel.di.annotation.Named;
@@ -28,7 +28,7 @@ public class AppLauncher extends HttpServerLauncher {
 
     @Override
     protected Module getBusinessLogicModule() {
-        return Modules.combine(new ServletsModule(), new MysqlDatabaseModule());
+        return Modules.combine(new ServletsModule(), new FilesModule());
     }
 
     public static void main(String[] args) throws Exception {

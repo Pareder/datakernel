@@ -2,7 +2,7 @@ package datakernel.module.database;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 import datakernel.dao.PageDao;
-import datakernel.dao.PageImplDao;
+import datakernel.dao.PageDatabaseDao;
 import io.datakernel.config.Config;
 import io.datakernel.di.annotation.Named;
 import io.datakernel.di.annotation.Provides;
@@ -18,7 +18,7 @@ public final class MysqlDatabaseModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bind(PageDao.class).to(PageImplDao.class);
+		bind(PageDao.class).to(PageDatabaseDao.class);
 	}
 
     @Provides
