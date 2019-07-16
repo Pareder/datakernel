@@ -8,7 +8,6 @@ import io.datakernel.di.annotation.Named;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.Executor;
@@ -61,10 +60,10 @@ public final class PageFilesDao implements PageDao {
 		}
 
 		@Override
-		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-			String docName = file.getFileName().toString().replace(DOT + extension, EMPTY);
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
 			String destinationName = file.getParent().getFileName().toString();
 			if (!sector.equals(destinationName)) {
+				String docName = file.getFileName().toString().replace(DOT + extension, EMPTY);
 				pageView.put(
 						docName,
 						docName,
