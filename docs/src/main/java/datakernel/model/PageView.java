@@ -2,44 +2,52 @@ package datakernel.model;
 
 import java.util.*;
 
+@SuppressWarnings("unused")
 public final class PageView {
     private final Map<String, List<Doc>> destinationToDocs = new HashMap<>();
-    private String pagePath;
-    private String content;
+    private final Map<String, String> properties;
+    private final String pagePath;
+    private final String content;
+	private String renderedContent;
 
-	public PageView(String pagePath, String content) {
+	public PageView(String pagePath, String content, Map<String, String> properties) {
 		this.pagePath = pagePath;
 		this.content = content;
+		this.properties = properties;
 	}
-
-	public PageView() {
-	}
-
-	public PageView setContent(String content) {
-        this.content = content;
-        return this;
-    }
 
     public String getPagePath() {
         return pagePath;
-    }
-
-    public PageView setPagePath(String pagePath) {
-        this.pagePath = pagePath;
-        return this;
     }
 
     public Set<Map.Entry<String, List<Doc>>> getDestinationToDocs() {
         return destinationToDocs.entrySet();
     }
 
-    public String getPageContent() {
+	public Set<Map.Entry<String, String>> getProperties() {
+		return properties.entrySet();
+	}
+
+	public String getPageContent() {
         return content;
     }
 
-    public void put(String docTitle, String docPath, String destPath, String destTitle) {
+	public String getRenderedContent() {
+		return renderedContent;
+	}
+
+	public void putProperty(String key, String value) {
+		properties.put(key, value);
+	}
+
+	public void putSubParagraph(String docTitle, String docPath, String destTitle, String destPath) {
         if (docTitle == null || docPath == null || destPath == null || destTitle == null) return;
         destinationToDocs.computeIfAbsent(destTitle, $ -> new ArrayList<>())
                 .add(new Doc(docTitle, docPath, destPath));
     }
+
+	public PageView setRenderedContent(String renderedContent) {
+		this.renderedContent = renderedContent;
+		return this;
+	}
 }

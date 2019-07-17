@@ -4,7 +4,6 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.vladsch.flexmark.ext.jekyll.front.matter.JekyllFrontMatterExtension;
-import com.vladsch.flexmark.ext.jekyll.tag.JekyllTagExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
@@ -24,11 +23,11 @@ import io.datakernel.http.RoutingServlet;
 import io.datakernel.http.StaticServlet;
 import io.datakernel.loader.StaticLoader;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import static datakernel.tag.TagReplacers.highlightReplacer;
-import static datakernel.tag.TagReplacers.includeReplacer;
+import static datakernel.tag.TagReplacers.*;
 import static io.datakernel.config.ConfigConverters.ofPath;
 import static io.datakernel.http.AsyncServletDecorator.mapHttpException;
 import static java.util.Arrays.asList;
@@ -55,8 +54,10 @@ public final class ServletsModule extends AbstractModule {
 
 	@Provides
 	List<TagReplacer> tagReplacer(@Named("files") Config config, StaticLoader staticLoader) {
+		Path path = config.get(ofPath(), "projectSourceFile.path");
 		return asList(
-				includeReplacer(config.get(ofPath(), "projectSourceFile.path")),
+				githubIncludeReplacer(path),
+				includeReplacer(path),
 				highlightReplacer());
 	}
 
@@ -71,7 +72,6 @@ public final class ServletsModule extends AbstractModule {
 		MutableDataSet options = new MutableDataSet();
 		options.set(Parser.EXTENSIONS, asList(
 				JekyllFrontMatterExtension.create(),
-				JekyllTagExtension.create(),
 				TablesExtension.create()));
 		return options;
 	}

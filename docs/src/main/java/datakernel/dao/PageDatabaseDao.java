@@ -10,6 +10,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 
 @Inject
@@ -40,7 +41,7 @@ public final class PageDatabaseDao implements PageDao {
 					if (!resultSet.next()) {
 						return null;
 					}
-					pageView = new PageView(sector, resultSet.getString(1));
+					pageView = new PageView(sector, resultSet.getString(0),  Collections.emptyMap());
 				}
 
 				try (PreparedStatement statement =
@@ -51,11 +52,11 @@ public final class PageDatabaseDao implements PageDao {
 					ResultSet resultSet = statement.executeQuery();
 
 					while (resultSet.next()) {
-						pageView.put(
+						pageView.putSubParagraph(
 								resultSet.getString(1),
 								resultSet.getString(2),
-								resultSet.getString(3),
-								resultSet.getString(4));
+								resultSet.getString(4), resultSet.getString(3)
+						);
 					}
 				}
 				return pageView;

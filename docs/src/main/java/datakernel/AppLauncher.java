@@ -15,24 +15,24 @@ import java.util.concurrent.Executors;
 import static io.datakernel.config.Config.ofClassPathProperties;
 
 public class AppLauncher extends HttpServerLauncher {
-    @Provides
-    @Named("properties")
-    Config config() {
-        return Config.create().overrideWith(ofClassPathProperties("app.properties"));
-    }
+	@Provides
+	@Named("properties")
+	Config config() {
+		return Config.create().overrideWith(ofClassPathProperties("app.properties"));
+	}
 
-    @Provides
-    Executor executor() {
-        return Executors.newCachedThreadPool();
-    }
+	@Provides
+	Executor executor() {
+		return Executors.newCachedThreadPool();
+	}
 
-    @Override
-    protected Module getBusinessLogicModule() {
-        return Modules.combine(new ServletsModule(), new FilesModule());
-    }
+	@Override
+	protected Module getBusinessLogicModule() {
+		return Modules.combine(new ServletsModule(), new FilesModule());
+	}
 
-    public static void main(String[] args) throws Exception {
-        HttpServerLauncher launcher = new AppLauncher();
-        launcher.launch(args);
-    }
+	public static void main(String[] args) throws Exception {
+		HttpServerLauncher launcher = new AppLauncher();
+		launcher.launch(args);
+	}
 }

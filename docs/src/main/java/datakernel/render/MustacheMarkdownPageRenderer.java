@@ -13,7 +13,6 @@ import io.datakernel.writer.ByteBufWriter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -43,20 +42,16 @@ public class MustacheMarkdownPageRenderer implements PageRenderer {
 						Promise.ofException(HttpException.badRequest400()) :
 						Promise.ofBlockingCallable(executor,
 								() -> {
-									Document document = parser.parse(pageView.getPageContent());
-									return renderer.render(document);
-								})
-								.then(renderedContent -> processByQueue(replacers.iterator(), renderedContent))
-								.map(replacedContent -> {
+									StringBuilder content = new StringBuilder(pageView.getPageContent());
+									for (TagReplacer replacer : replacers) {
+										replacer.replace(content);
+									}
+									Document document = parser.parse(content.toString());
+									String renderedContent = renderer.render(document);
+
 									ByteBufWriter writer = new ByteBufWriter();
-									page.execute(writer, map("page", pageView.setContent(replacedContent)));
+									page.execute(writer, map("page", pageView.setRenderedContent(renderedContent)));
 									return writer.getBuf();
 								}));
 	}
-
-	private Promise<String> processByQueue(Iterator<TagReplacer> iterator, String text) {
-		return !iterator.hasNext() ? Promise.of(text) : iterator.next().replace(text)
-				.whenResult(res -> processByQueue(iterator, res));
-	}
-
 }
