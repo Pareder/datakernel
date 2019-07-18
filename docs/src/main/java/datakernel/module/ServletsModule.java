@@ -1,4 +1,4 @@
-package datakernel.module.servlet;
+package datakernel.module;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -8,8 +8,12 @@ import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import datakernel.dao.FileResourceDao;
 import datakernel.dao.PageDao;
+import datakernel.dao.ResourceDao;
+import datakernel.render.PageCacheImpl;
 import datakernel.render.MustacheMarkdownPageRenderer;
+import datakernel.render.PageCache;
 import datakernel.render.PageRenderer;
 import datakernel.tag.TagReplacer;
 import io.datakernel.async.Promise;
@@ -23,13 +27,15 @@ import io.datakernel.http.RoutingServlet;
 import io.datakernel.http.StaticServlet;
 import io.datakernel.loader.StaticLoader;
 
-import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
 import static datakernel.tag.TagReplacers.*;
+import static io.datakernel.config.ConfigConverters.ofInteger;
 import static io.datakernel.config.ConfigConverters.ofPath;
-import static io.datakernel.http.AsyncServletDecorator.mapHttpException;
+import static io.datakernel.http.AsyncServletDecorator.mapException;
+import static io.datakernel.http.HttpResponse.redirect302;
 import static java.util.Arrays.asList;
 
 @SuppressWarnings("SameParameterValue")
@@ -53,18 +59,37 @@ public final class ServletsModule extends AbstractModule {
 	}
 
 	@Provides
-	List<TagReplacer> tagReplacer(@Named("files") Config config, StaticLoader staticLoader) {
-		Path path = config.get(ofPath(), "projectSourceFile.path");
+	@Named("projectSource")
+	ResourceDao projectSourceDao(@Named("files") Config config) {
+		return new FileResourceDao(config.get(ofPath(), "projectSourceFile.path"));
+	}
+
+	@Provides
+	@Named("includes")
+	ResourceDao includesDao(@Named("files") Config config) {
+		return new FileResourceDao(config.get(ofPath(), "includes.path"));
+	}
+
+	@Provides
+	List<TagReplacer> tagReplacer(@Named("includes") ResourceDao includesDao,
+								  @Named("projectSource") ResourceDao projectSourceDao) {
 		return asList(
-				githubIncludeReplacer(path),
-				includeReplacer(path),
+				githubIncludeReplacer(projectSourceDao),
+				includeReplacer(includesDao),
 				highlightReplacer());
 	}
 
 	@Provides
-	PageRenderer render(List<TagReplacer> replacer, Executor executor,
-						PageDao pageDao, Parser parser, HtmlRenderer renderer) {
-		return new MustacheMarkdownPageRenderer(replacer, pageDao, parser, renderer, executor);
+	PageCache pageCache(Config config) {
+		return new PageCacheImpl(
+				config.get(ofInteger(), "amountBuffer", 1 << 8),
+				config.get(ofInteger(), "amountBuffer", 1 << 16));
+	}
+
+	@Provides
+	PageRenderer render(List<TagReplacer> replacer, Executor executor, PageDao pageDao,
+						Parser parser, HtmlRenderer renderer, PageCache pageCache) {
+		return new MustacheMarkdownPageRenderer(replacer, pageDao, parser, renderer, executor, pageCache);
 	}
 
 	@Provides
@@ -87,10 +112,10 @@ public final class ServletsModule extends AbstractModule {
 							 @Named("doc") AsyncServlet docServlet,
 							 @Named("fail") AsyncServlet failServlet,
 							 @Named("static") AsyncServlet staticServlet) {
-		return mapHttpException(failServlet)
+		return mapException(Objects::nonNull, failServlet)
 				.serve(RoutingServlet.create()
 						.map("/", homeServlet)
-						.map("/favicon.ico", $ -> Promise.of(HttpResponse.ok200()))
+						.map("/favicon.ico", $ -> Promise.of(redirect302("/static")))
 						.map("/static/*", staticServlet)
 						.map("/:sector", topicServlet)
 						.map("/:sector/:dest/:doc", docServlet));

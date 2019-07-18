@@ -34,14 +34,14 @@ import static java.nio.file.FileVisitResult.TERMINATE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.util.regex.Pattern.DOTALL;
 
-public final class PageFilesDao implements PageDao {
+public final class FilePageDao implements PageDao {
 	private static final String DEFAULT_TITLE = "unknown";
 	private static final String TITLE_REGEX = "title:\\s*(.+)";
-	private static final String DESTINATION_REGEX = "Destination:\\s*(.+)";
+	private static final String DESTINATION_REGEX = "destination:\\s*(.+)";
 	private static final String PROPERTIES_BLOCK_REGEX = "---(.*)---";
 	private static final String PROPERTIES_REGEX = "(\\.+):\\s*(.+)";
 	private final int PROPERTIES_BLOCK_SIZE_LIMIT = ApplicationSettings.getInt(
-			PageFilesDao.class, "propertiesBlockSize.limit", 1 << 8);
+			FilePageDao.class, "propertiesBlockSize.limit", 1 << 8);
 
 	private final Pattern propertiesBlockPattern = Pattern.compile(PROPERTIES_BLOCK_REGEX, DOTALL);
 	private final Pattern propertiesPattern = Pattern.compile(PROPERTIES_REGEX, DOTALL);
@@ -56,7 +56,7 @@ public final class PageFilesDao implements PageDao {
 	private final Executor executor;
 
 	@Inject
-	public PageFilesDao(@Named("files") Config config, Executor executor) {
+	public FilePageDao(@Named("files") Config config, Executor executor) {
 		this.executor = executor;
 		this.extension = config.get("sourceFile.extension");
 		this.path = config.get(ofPath(), "sourceFile.path");

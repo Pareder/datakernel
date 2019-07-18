@@ -1,8 +1,6 @@
-package datakernel.module.database;
+package datakernel.module;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
-import datakernel.dao.PageDao;
-import datakernel.dao.PageDatabaseDao;
 import io.datakernel.config.Config;
 import io.datakernel.di.annotation.Named;
 import io.datakernel.di.annotation.Provides;
@@ -15,13 +13,7 @@ import static io.datakernel.config.ConfigConverters.ofBoolean;
 
 
 public final class MysqlDatabaseModule extends AbstractModule {
-
-	@Override
-	protected void configure() {
-		bind(PageDao.class).to(PageDatabaseDao.class);
-	}
-
-    @Provides
+	@Provides
 	DataSource dataSource(@Named("database") Config config) throws SQLException {
 		MysqlDataSource dataSource = new MysqlDataSource();
 		dataSource.setUrl(String.format("jdbc:mysql://%s:%s/%s",
@@ -38,6 +30,6 @@ public final class MysqlDatabaseModule extends AbstractModule {
 	@Provides
 	@Named("database")
 	Config config() {
-    	return Config.ofClassPathProperties("database.properties");
+		return Config.ofClassPathProperties("database.properties");
 	}
 }

@@ -1,8 +1,8 @@
 package datakernel.tag;
 
+import datakernel.dao.ResourceDao;
+
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -11,16 +11,16 @@ import java.util.regex.Pattern;
 import static java.util.regex.Pattern.DOTALL;
 
 public class IncludeReplacer implements TagReplacer {
-	private static final String INCLUDE_TAG = "\\{%\\s+include\\s+(\\w+\\.\\w+)(.*?)\\s*%}";
+	private static final String INCLUDE_TAG = "\\{%\\s+include\\s+(.+\\.\\w+)\\s+(.*?)?\\s*%}";
 	private static final String PARAMS = "\\s*(\\w+)=(['\"`].*['\"`])";
-	private static final String INCLUDE_CONTENT = "\\{\\{\\s+(.+)\\s+}}";
+	private static final String INCLUDE_CONTENT = "\\{\\{\\s+include\\.(.+)\\s+}}";
 	private final Pattern pagePattern = Pattern.compile(INCLUDE_TAG, DOTALL);
 	private final Pattern contentPattern = Pattern.compile(INCLUDE_CONTENT, DOTALL);
 	private final Pattern paramsPattern = Pattern.compile(PARAMS, DOTALL);
-	private final Path path;
+	private final ResourceDao resourceDao;
 
-	public IncludeReplacer(Path path) {
-		this.path = path;
+	public IncludeReplacer(ResourceDao resourceDao) {
+		this.resourceDao = resourceDao;
 	}
 
 	@Override
@@ -47,14 +47,18 @@ public class IncludeReplacer implements TagReplacer {
 		}
 	}
 
-	private String getContent(String path, Params params) throws IOException {
-		Path resourcePath = this.path.resolve(path);
-		StringBuilder content = new StringBuilder(new String(Files.readAllBytes(resourcePath)));
+	private String getContent(String resourceName, Params params) throws ReplaceException, IOException {
+		String resourcePath = resourceDao.getResource(resourceName);
+		StringBuilder content = new StringBuilder(resourcePath);
 
 		Matcher contentMatch = contentPattern.matcher(content);
 		while (contentMatch.find()) {
 			String key = contentMatch.group(1);
-			content.replace(contentMatch.start(), contentMatch.end(), params.getValue(key));
+			String value = params.getValue(key);
+			if (value == null) {
+				throw new ReplaceException("Key :" + key + " cannot be found for " + resourceName);
+			}
+			content.replace(contentMatch.start(), contentMatch.end(), value);
 		}
 		return content.toString();
 	}

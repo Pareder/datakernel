@@ -52,8 +52,8 @@
     <div class="row content-indented">
       <div class="col-xs-3 docs-menu">
         {{#page.destinationToDocs}}
-        <ul>
-          <li><h3>{{key}}</h3></li>
+        <h3>{{key}}</h3>
+        <ul class="square">
           {{#value}}
           <li><a href="/{{page.pagePath}}/{{destPath}}/{{docPath}}">{{docTitle}}</a></li>
           {{/value}}

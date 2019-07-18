@@ -25,23 +25,27 @@ public class MustacheMarkdownPageRenderer implements PageRenderer {
 	private final Parser parser;
 	private final List<TagReplacer> replacers;
 	private final Executor executor;
+	private final PageCache pageCache;
 
 	public MustacheMarkdownPageRenderer(List<TagReplacer> replacers, PageDao pageDao, Parser parser,
-										HtmlRenderer renderer, Executor executor) {
-		checkArgument(!replacers.isEmpty(), () -> "List replacers cannot be emty");
+										HtmlRenderer renderer, Executor executor, PageCache pageCache) {
+		checkArgument(!replacers.isEmpty(), () -> "List replacers cannot be empty");
 		this.replacers = replacers;
 		this.pageDao = pageDao;
 		this.renderer = renderer;
 		this.parser = parser;
 		this.executor = executor;
+		this.pageCache = pageCache;
 	}
 
 	public Promise<ByteBuf> render(Mustache page, @NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		return pageDao.loadPage(sector, destination, doc)
-				.then(pageView -> pageView == null ?
-						Promise.ofException(HttpException.badRequest400()) :
-						Promise.ofBlockingCallable(executor,
-								() -> {
+		ByteBuf cachedPage = pageCache.get(sector, destination, doc);
+		return cachedPage != null ?
+				Promise.of(cachedPage) :
+				pageDao.loadPage(sector, destination, doc)
+						.then(pageView -> pageView == null ?
+								Promise.ofException(HttpException.badRequest400()) :
+								Promise.ofBlockingCallable(executor, () -> {
 									StringBuilder content = new StringBuilder(pageView.getPageContent());
 									for (TagReplacer replacer : replacers) {
 										replacer.replace(content);
@@ -52,6 +56,7 @@ public class MustacheMarkdownPageRenderer implements PageRenderer {
 									ByteBufWriter writer = new ByteBufWriter();
 									page.execute(writer, map("page", pageView.setRenderedContent(renderedContent)));
 									return writer.getBuf();
-								}));
+								}))
+						.whenResult(buf -> pageCache.put(sector, destination, doc, buf));
 	}
 }

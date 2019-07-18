@@ -1,5 +1,6 @@
 package datakernel.model;
 
+@SuppressWarnings("unused")
 public final class Doc {
 	private final String title;
 	private final String path;

@@ -1,7 +1,7 @@
 package datakernel;
 
-import datakernel.module.file.FilesModule;
-import datakernel.module.servlet.ServletsModule;
+import datakernel.module.FilesModule;
+import datakernel.module.ServletsModule;
 import io.datakernel.config.Config;
 import io.datakernel.di.annotation.Named;
 import io.datakernel.di.annotation.Provides;
