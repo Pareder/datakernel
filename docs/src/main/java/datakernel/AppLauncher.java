@@ -1,18 +1,17 @@
 package datakernel;
 
-import datakernel.module.FilesModule;
 import datakernel.module.ServletsModule;
 import io.datakernel.config.Config;
 import io.datakernel.di.annotation.Named;
 import io.datakernel.di.annotation.Provides;
 import io.datakernel.di.module.Module;
-import io.datakernel.di.module.Modules;
 import io.datakernel.launchers.http.HttpServerLauncher;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 import static io.datakernel.config.Config.ofClassPathProperties;
+import static io.datakernel.di.module.Modules.combine;
+import static java.util.concurrent.Executors.newCachedThreadPool;
 
 public class AppLauncher extends HttpServerLauncher {
 	@Provides
@@ -23,12 +22,12 @@ public class AppLauncher extends HttpServerLauncher {
 
 	@Provides
 	Executor executor() {
-		return Executors.newCachedThreadPool();
+		return newCachedThreadPool();
 	}
 
 	@Override
 	protected Module getBusinessLogicModule() {
-		return Modules.combine(new ServletsModule(), new FilesModule());
+		return combine(new ServletsModule());
 	}
 
 	public static void main(String[] args) throws Exception {

@@ -14,17 +14,15 @@ public class PageCacheImpl implements PageCache {
 
 	@Override
 	public ByteBuf get(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		byte[] key = (sector + (destination != null ? destination : "") + doc).getBytes();
-		return ringBuffer.get(key);
+		return ringBuffer.get(getKey(sector, destination, doc));
 	}
 
 	@Override
 	public void put(@NotNull String sector, @Nullable String destination, @NotNull String doc, ByteBuf pageView) {
-		byte[] key = getKey(sector, destination, doc);
-		ringBuffer.put(key, pageView.array());
+		ringBuffer.put(getKey(sector, destination, doc), pageView.getArray());
 	}
 
 	private byte[] getKey(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		return  (sector + (destination != null ? destination : "") + doc).getBytes();
+		return (sector + (destination != null ? destination : "") + doc).getBytes();
 	}
 }

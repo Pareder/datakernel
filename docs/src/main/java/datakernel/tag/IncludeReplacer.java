@@ -11,9 +11,9 @@ import java.util.regex.Pattern;
 import static java.util.regex.Pattern.DOTALL;
 
 public class IncludeReplacer implements TagReplacer {
-	private static final String INCLUDE_TAG = "\\{%\\s+include\\s+(.+\\.\\w+)\\s+(.*?)?\\s*%}";
-	private static final String PARAMS = "\\s*(\\w+)=(['\"`].*['\"`])";
-	private static final String INCLUDE_CONTENT = "\\{\\{\\s+include\\.(.+)\\s+}}";
+	private static final String INCLUDE_TAG = "\\{%\\s+include\\s+([\\w-]+\\.\\w+)\\s+([\\w-]+=\".*?\")*\\s*%}";
+	private static final String PARAMS = "\\s*([\\w-]+)=\"(.*?)\"";
+	private static final String INCLUDE_CONTENT = "\\{\\{\\s+include\\.(.*?)\\s+}}";
 	private final Pattern pagePattern = Pattern.compile(INCLUDE_TAG, DOTALL);
 	private final Pattern contentPattern = Pattern.compile(INCLUDE_CONTENT, DOTALL);
 	private final Pattern paramsPattern = Pattern.compile(PARAMS, DOTALL);
@@ -28,19 +28,18 @@ public class IncludeReplacer implements TagReplacer {
 		try {
 			Matcher matcher = pagePattern.matcher(text.toString());
 			Map<String, Params> pathToParams = getPageParams(matcher);
+			Map<String, String> pathToContents = new HashMap<>();
 			for (Map.Entry<String, Params> entry : pathToParams.entrySet()) {
 				String path = entry.getKey();
-				String content = getContent(path, pathToParams.get(path));
+				pathToContents.put(path, getContent(path, entry.getValue()));
+			}
 
-				matcher.reset();
-				int offset = 0;
-				while (matcher.find()) {
-					String foundPath = matcher.group(1);
-					if (foundPath.equals(path)) {
-						text.replace(matcher.start() + offset, matcher.end() + offset, content);
-						offset += content.length() - (matcher.end() - matcher.start());
-					}
-				}
+			matcher.reset();
+			int offset = 0;
+			while (matcher.find()) {
+				String content = pathToContents.get(matcher.group(1));
+				text.replace(matcher.start() + offset, matcher.end() + offset, content);
+				offset += content.length() - (matcher.end() - matcher.start());
 			}
 		} catch (IOException e) {
 			throw new ReplaceException(e);
@@ -52,13 +51,15 @@ public class IncludeReplacer implements TagReplacer {
 		StringBuilder content = new StringBuilder(resourcePath);
 
 		Matcher contentMatch = contentPattern.matcher(content);
+		int offset = 0;
 		while (contentMatch.find()) {
 			String key = contentMatch.group(1);
 			String value = params.getValue(key);
 			if (value == null) {
-				throw new ReplaceException("Key :" + key + " cannot be found for " + resourceName);
+				throw new ReplaceException("Key " + key + ": cannot be found for " + resourceName);
 			}
-			content.replace(contentMatch.start(), contentMatch.end(), value);
+			content.replace(contentMatch.start() + offset, contentMatch.end() + offset, value);
+			offset += value.length() - (contentMatch.end() - contentMatch.start());
 		}
 		return content.toString();
 	}
@@ -69,7 +70,11 @@ public class IncludeReplacer implements TagReplacer {
 			String path = matcher.group(1);
 			Params params = pathToParams.getOrDefault(path, new Params());
 			pathToParams.putIfAbsent(path, params);
-			Matcher paramsMatch = paramsPattern.matcher(matcher.group(2));
+			String includeParams = matcher.group(2);
+			if (includeParams == null) {
+				return pathToParams;
+			}
+			Matcher paramsMatch = paramsPattern.matcher(includeParams);
 			while (paramsMatch.find()) {
 				String key = paramsMatch.group(1);
 				String value = paramsMatch.group(2);

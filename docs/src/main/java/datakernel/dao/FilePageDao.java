@@ -15,9 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -30,7 +28,8 @@ import java.util.regex.Pattern;
 import static io.datakernel.config.ConfigConverters.ofPath;
 import static java.nio.charset.Charset.defaultCharset;
 import static java.nio.file.FileVisitResult.CONTINUE;
-import static java.nio.file.FileVisitResult.TERMINATE;
+import static java.nio.file.FileVisitResult.SKIP_SUBTREE;
+import static java.nio.file.Files.walkFileTree;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.util.regex.Pattern.DOTALL;
 
@@ -39,9 +38,10 @@ public final class FilePageDao implements PageDao {
 	private static final String TITLE_REGEX = "title:\\s*(.+)";
 	private static final String DESTINATION_REGEX = "destination:\\s*(.+)";
 	private static final String PROPERTIES_BLOCK_REGEX = "---(.*)---";
-	private static final String PROPERTIES_REGEX = "(\\.+):\\s*(.+)";
-	private final int PROPERTIES_BLOCK_SIZE_LIMIT = ApplicationSettings.getInt(
+	private static final String PROPERTIES_REGEX = "([\\w-]+):\\s*([\\w-./]+)";
+	private static final int PROPERTIES_BLOCK_SIZE_LIMIT = ApplicationSettings.getInt(
 			FilePageDao.class, "propertiesBlockSize.limit", 1 << 8);
+	private final static String INDEX = "index";
 
 	private final Pattern propertiesBlockPattern = Pattern.compile(PROPERTIES_BLOCK_REGEX, DOTALL);
 	private final Pattern propertiesPattern = Pattern.compile(PROPERTIES_REGEX, DOTALL);
@@ -56,7 +56,7 @@ public final class FilePageDao implements PageDao {
 	private final Executor executor;
 
 	@Inject
-	public FilePageDao(@Named("files") Config config, Executor executor) {
+	public FilePageDao(@Named("properties") Config config, Executor executor) {
 		this.executor = executor;
 		this.extension = config.get("sourceFile.extension");
 		this.path = config.get(ofPath(), "sourceFile.path");
@@ -65,12 +65,12 @@ public final class FilePageDao implements PageDao {
 	@Override
 	public Promise<PageView> loadPage(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
 		Path path = this.path.resolve(resolveResource(sector, destination, doc));
-		return ChannelFileReader.open(executor, path)
+			return ChannelFileReader.open(executor, path)
 				.then(fileReader -> fileReader.toCollector(ByteBufQueue.collector()))
 				.then(buf -> Promise.ofBlockingCallable(executor, () -> {
 					String content = buf.asString(defaultCharset());
 					PageView pageView = new PageView(sector, content, parseProperties(content));
-					Files.walkFileTree(this.path.resolve(sector), new PageVisitor(sector, pageView));
+					walkFileTree(this.path.resolve(sector), new PageVisitor(pageView));
 					return pageView;
 				}));
 	}
@@ -99,32 +99,31 @@ public final class FilePageDao implements PageDao {
 	}
 
 	private final class PageVisitor extends SimpleFileVisitor<Path> {
-		private final String sector;
 		private final PageView pageView;
 
-		public PageVisitor(String sector, PageView pageView) {
-			this.sector = sector;
+		public PageVisitor(PageView pageView) {
 			this.pageView = pageView;
 		}
 
 		@Override
 		public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
-			String destinationName = path.getParent().getFileName().toString();
-			if (!sector.equals(destinationName)) {
-				String docPath = path.getFileName().toString().replace(DOT + extension, EMPTY);
-				ByteBuf buf = ByteBufPool.allocate(PROPERTIES_BLOCK_SIZE_LIMIT);
-				buf.tail(PROPERTIES_BLOCK_SIZE_LIMIT);
-				try {
-					FileChannel channel = FileChannel.open(path, READ);
-					channel.read(buf.toReadByteBuffer());
-				} catch (IOException e) {
-					return TERMINATE;
-				}
-				String propsBlock = buf.asString(Charset.defaultCharset());
-				pageView.putSubParagraph(
-						findDocTitle(propsBlock), docPath,
-						findDestinationTitle(propsBlock), destinationName);
+			String destinationPath = path.getParent().getFileName().toString();
+			String docPath = path.getFileName().toString().replace(DOT + extension, EMPTY);
+			if (docPath.equals(INDEX)) {
+				return CONTINUE;
 			}
+			ByteBuf buf = ByteBufPool.allocate(PROPERTIES_BLOCK_SIZE_LIMIT);
+			buf.tail(PROPERTIES_BLOCK_SIZE_LIMIT);
+			try {
+				FileChannel channel = FileChannel.open(path, READ);
+				channel.read(buf.toReadByteBuffer());
+			} catch (IOException e) {
+				return SKIP_SUBTREE;
+			}
+			String propsBlock = buf.asString(defaultCharset());
+			pageView.putSubParagraph(
+					findDocTitle(propsBlock), docPath,
+					findDestinationTitle(propsBlock), destinationPath);
 			return CONTINUE;
 		}
 

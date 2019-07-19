@@ -24,8 +24,8 @@ public final class PageView {
         return destinationToDocs.entrySet();
     }
 
-	public Set<Map.Entry<String, String>> getProperties() {
-		return properties.entrySet();
+	public Map<String, String> getProperties() {
+		return properties;
 	}
 
 	public String getPageContent() {

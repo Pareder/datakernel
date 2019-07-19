@@ -1,7 +1,7 @@
 function enableHighlight() {
-  var elm = document.getElementsByTagName('pre');
+  const elm = document.getElementsByTagName('pre');
   for (var i = 0; i < elm.length; i++)
-    elm[i].className = elm[i].className + " prettyprint " + "highlight";
+    elm[i].className = elm[i].className + " prettyprint " + " highlight " + " no-border ";
 }
 
 function wrapToFigure() {

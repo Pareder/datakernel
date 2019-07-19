@@ -1,21 +1,8 @@
 package datakernel.module;
 
-import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-import com.vladsch.flexmark.ext.jekyll.front.matter.JekyllFrontMatterExtension;
-import com.vladsch.flexmark.ext.tables.TablesExtension;
-import com.vladsch.flexmark.html.HtmlRenderer;
-import com.vladsch.flexmark.parser.Parser;
-import com.vladsch.flexmark.util.data.MutableDataSet;
-import datakernel.dao.FileResourceDao;
-import datakernel.dao.PageDao;
-import datakernel.dao.ResourceDao;
-import datakernel.render.PageCacheImpl;
-import datakernel.render.MustacheMarkdownPageRenderer;
-import datakernel.render.PageCache;
 import datakernel.render.PageRenderer;
-import datakernel.tag.TagReplacer;
 import io.datakernel.async.Promise;
 import io.datakernel.config.Config;
 import io.datakernel.di.annotation.Named;
@@ -27,78 +14,20 @@ import io.datakernel.http.RoutingServlet;
 import io.datakernel.http.StaticServlet;
 import io.datakernel.loader.StaticLoader;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 
-import static datakernel.tag.TagReplacers.*;
-import static io.datakernel.config.ConfigConverters.ofInteger;
-import static io.datakernel.config.ConfigConverters.ofPath;
 import static io.datakernel.http.AsyncServletDecorator.mapException;
 import static io.datakernel.http.HttpResponse.redirect302;
-import static java.util.Arrays.asList;
 
 @SuppressWarnings("SameParameterValue")
 public final class ServletsModule extends AbstractModule {
-	private static final String MAIN_SECTOR = "main";
+	private static final String HOME_SECTOR = "home";
 	private static final String INDEX_DOC = "index";
 
-	@Provides
-	HtmlRenderer htmlRenderer(MutableDataSet options) {
-		return HtmlRenderer.builder(options).build();
-	}
-
-	@Provides
-	Parser markdownParser(MutableDataSet options) {
-		return Parser.builder(options).build();
-	}
-
-	@Provides
-	MustacheFactory mustache() {
-		return new DefaultMustacheFactory();
-	}
-
-	@Provides
-	@Named("projectSource")
-	ResourceDao projectSourceDao(@Named("files") Config config) {
-		return new FileResourceDao(config.get(ofPath(), "projectSourceFile.path"));
-	}
-
-	@Provides
-	@Named("includes")
-	ResourceDao includesDao(@Named("files") Config config) {
-		return new FileResourceDao(config.get(ofPath(), "includes.path"));
-	}
-
-	@Provides
-	List<TagReplacer> tagReplacer(@Named("includes") ResourceDao includesDao,
-								  @Named("projectSource") ResourceDao projectSourceDao) {
-		return asList(
-				githubIncludeReplacer(projectSourceDao),
-				includeReplacer(includesDao),
-				highlightReplacer());
-	}
-
-	@Provides
-	PageCache pageCache(Config config) {
-		return new PageCacheImpl(
-				config.get(ofInteger(), "amountBuffer", 1 << 8),
-				config.get(ofInteger(), "amountBuffer", 1 << 16));
-	}
-
-	@Provides
-	PageRenderer render(List<TagReplacer> replacer, Executor executor, PageDao pageDao,
-						Parser parser, HtmlRenderer renderer, PageCache pageCache) {
-		return new MustacheMarkdownPageRenderer(replacer, pageDao, parser, renderer, executor, pageCache);
-	}
-
-	@Provides
-	MutableDataSet options() {
-		MutableDataSet options = new MutableDataSet();
-		options.set(Parser.EXTENSIONS, asList(
-				JekyllFrontMatterExtension.create(),
-				TablesExtension.create()));
-		return options;
+	@Override
+	protected void configure() {
+		install(new RenderModule());
 	}
 
 	@Provides
@@ -140,7 +69,7 @@ public final class ServletsModule extends AbstractModule {
 							 PageRenderer pageRenderer,
 							 MustacheFactory mustache) {
 		Mustache page = mustache.compile(config.get("templates.path").concat("/index.html"));
-		return request -> pageRenderer.render(page, MAIN_SECTOR, null, INDEX_DOC)
+		return request -> pageRenderer.render(page, HOME_SECTOR, null, INDEX_DOC)
 				.map(content -> HttpResponse.ok200().withBody(content));
 	}
 

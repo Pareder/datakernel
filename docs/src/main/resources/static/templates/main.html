@@ -33,9 +33,18 @@
       <div class="collapse navbar-collapse">
         <ul class="nav navbar-nav">
           <li><a href="/">Home</a></li>
-          <li><a href="/core">Core</a></li>
-          <li><a href="/cloud">Cloud</a></li>
-          <li><a href="/global-cloud">Global Cloud</a></li>
+          <li
+            {{#active.core}}
+            class="active"
+            {{/active.core}} ><a href="/core">Core</a></li>
+          <li
+            {{#active.cloud}}
+            class="active"
+            {{/active.cloud}}><a href="/cloud">Cloud</a></li>
+          <li
+            {{#active.global-cloud}}
+            class="active"
+            {{/active.global-cloud}}><a href="/global-cloud">Global Cloud</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li><a href="http://uikernel.io">UIKernel</a></li>
@@ -53,7 +62,7 @@
       <div class="col-xs-3 docs-menu">
         {{#page.destinationToDocs}}
         <h3>{{key}}</h3>
-        <ul class="square">
+        <ul class="" style="list-style: disc">
           {{#value}}
           <li><a href="/{{page.pagePath}}/{{destPath}}/{{docPath}}">{{docTitle}}</a></li>
           {{/value}}
@@ -63,10 +72,15 @@
       </div>
 
       <div class="col-xs-9 markdown-content docs-content">
+        <h1>{{page.properties.title}}</h1>
         {{{page.renderedContent}}}
+
+        <div class="docs-prevnext">
+          <a class="docs-prev pull-left" href="/{{page.properties.prev}}">&larr; Prev</a>
+          <a class="docs-next pull-right" href="/{{page.properties.next}}">Next &rarr;</a>
+        </div>
       </div>
     </div>
-
   </div>
 </div>
 <div class="page-row footer">
@@ -83,8 +97,5 @@
     Copyright (C) 2019 SoftIndex LLC. All Rights Reserved
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
-<script src="/static/js/highlight.js"></script>
-<script>init()</script>
 </body>
 </html>
