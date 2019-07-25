@@ -1,7 +1,5 @@
 package io.datakernel.tag;
 
-import io.datakernel.dao.ResourceDao;
-import io.datakernel.util.Preconditions;
 import org.python.util.PythonInterpreter;
 
 import java.util.Map;
@@ -26,6 +24,7 @@ public class HighlightReplacer implements TagReplacer {
 					+ "\nresult = highlight(content, %1$s(), HtmlFormatter())";
 	private final PythonInterpreter pythonInterpreter;
 	private final Pattern pattern = Pattern.compile(HIGHLIGHT_TAG, DOTALL);
+	private final Object lock = new Object();
 
 	private HighlightReplacer(PythonInterpreter pythonInterpreter) {
 		this.pythonInterpreter = pythonInterpreter;
@@ -42,9 +41,11 @@ public class HighlightReplacer implements TagReplacer {
 		while (matcher.find()) {
 			String lang = matcher.group(1);
 			String innerContent = matcher.group(2);
-			pythonInterpreter.set("content", innerContent);
-			pythonInterpreter.exec(format(HIGHLIGHT_COMMAND, SUPPORT_LANGUAGES.getOrDefault(lang, DEFAULT_LEXER)));
-			innerContent = pythonInterpreter.get("result", String.class);
+			synchronized (lock) {
+				pythonInterpreter.set("content", innerContent);
+				pythonInterpreter.exec(format(HIGHLIGHT_COMMAND, SUPPORT_LANGUAGES.getOrDefault(lang, DEFAULT_LEXER)));
+				innerContent = pythonInterpreter.get("result", String.class);
+			}
 			text.replace(matcher.start() + offset, matcher.end() + offset, innerContent);
 			offset += innerContent.length() - (matcher.end() - matcher.start());
 		}

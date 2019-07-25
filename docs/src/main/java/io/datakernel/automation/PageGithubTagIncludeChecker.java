@@ -34,8 +34,8 @@ public class PageGithubTagIncludeChecker implements PageChecker {
 		try {
 			Matcher match = githubTagPattern.matcher(content.toString());
 			while (match.find()) {
-				String resourceName = match.group(1);
-				String tag = match.group(3);
+				String resourceName = match.group("resourceName");
+				String tag = match.group("tag");
 
 				String includeContent = resourceDao.getResource(resourceName);
 				if (tag != null) {

@@ -1,23 +1,24 @@
 package io.datakernel.automation;
 
 import io.datakernel.config.Config;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Integer.MAX_VALUE;
+
 public class PageLinkChecker implements PageChecker {
-	private static final String LINK_PATTERN = "\\[.+?]\\(/(.*?)\\)";
-	private static final String LINK_PART_PATTERN = "\\[.+?]\\(/(\\w+?)(/\\w+?)?(/\\w+?)?\\)";
-	private final Pattern linkPartPattern = Pattern.compile(LINK_PART_PATTERN);
+	private static final String EXTENSION_PATTERN = "\\.\\w+";
+	private static final String LINK_PATTERN = "\\[.+?]\\([\\w-]*?/?([\\w-]+(\\.\\w+)?)\\)";
+	private static final String DOT = ".";
+	private static final String EMPTY = "";
+
+	private final Pattern extensionPattern = Pattern.compile(EXTENSION_PATTERN);
 	private final Pattern linkPattern = Pattern.compile(LINK_PATTERN);
 	private final Path pagesRootPath;
 	private final String extension;
@@ -37,19 +38,20 @@ public class PageLinkChecker implements PageChecker {
 		Matcher linkMatch = linkPattern.matcher(content);
 		while (linkMatch.find()) {
 			Throwable throwable = null;
-			String link = linkMatch.group();
-			Matcher linkPartMatch = linkPartPattern.matcher(link);
-			if (linkPartMatch.find()) {
-				String sector = linkPartMatch.group(1);
-				String destination = linkPartMatch.group(2);
-				String doc = linkPartMatch.group(3);
-				String path = resolveResource(sector, destination, doc);
-				Path pathToPage = pagesRootPath.resolve(path);
-				if (!Files.exists(pathToPage)) {
-					throwable = new PageException(String.format("Cannot find link: %s", path));
+			try {
+				String resourceName = extensionPattern.matcher(linkMatch.group(1))
+						.replaceAll(EMPTY)
+						.replace("\\.\\w+", EMPTY)
+						.concat(DOT)
+						.concat(extension);
+				Optional<Path> optionalPath = Files.find(pagesRootPath, MAX_VALUE,
+						(path, attributes) -> attributes.isRegularFile() && path.getFileName().toString().equals(resourceName))
+						.findFirst();
+				if (!optionalPath.isPresent()) {
+					throwable = new PageException(String.format("Cannot find link: %s", resourceName));
 				}
-			} else {
-				throwable = new PageException(String.format("Incorrect link: %s", link));
+			} catch (IOException e) {
+				throwable = e;
 			}
 			if (throwable == null) continue;
 			List<Throwable> exceptions = pathToExceptions.getOrDefault(fileName, new ArrayList<>());
@@ -57,13 +59,5 @@ public class PageLinkChecker implements PageChecker {
 			pathToExceptions.putIfAbsent(fileName, exceptions);
 		}
 		return pathToExceptions;
-	}
-
-	protected String resolveResource(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		String resource = sector + (destination != null ? destination : "");
-		resource = !resource.isEmpty() ?
-				resource + doc + "." + extension :
-				doc + "." + extension;
-		return resource;
 	}
 }

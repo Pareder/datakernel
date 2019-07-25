@@ -11,7 +11,7 @@ import static java.util.regex.Pattern.DOTALL;
 import static java.util.regex.Pattern.MULTILINE;
 
 public class GithubIncludeReplacer implements TagReplacer {
-	public static final String GITHUB_INCLUDE_TAG = "\\{%\\s+github_sample\\s+(.+?)\\s+(tag:(.+?))?\\s*%}";
+	public static final String GITHUB_INCLUDE_TAG = "\\{%\\s+github_sample\\s+((/?.+?/)*/?(?<resourceName>\\w+?\\.\\w+))\\s+(tag:(?<tag>.+?))?\\s*%}";
 	public static final String START_END_TAG = "\\/\\/\\s*\\[START\\s+%1$s\\]\\n((\\t*).+?)\\s*\\/\\/\\s*\\[END\\s+%1$s\\]";
 	private static final String EMPTY = "";
 	private final ResourceDao resourceDao;
@@ -31,8 +31,8 @@ public class GithubIncludeReplacer implements TagReplacer {
 			Matcher match = githubTagPattern.matcher(text.toString());
 			int offset = 0;
 			while (match.find()) {
-				String resourceName = match.group(1);
-				String tag = match.group(3);
+				String resourceName = match.group("resourceName");
+				String tag = match.group("tag");
 
 				String content = resourceDao.getResource(resourceName);
 				if (tag != null) {

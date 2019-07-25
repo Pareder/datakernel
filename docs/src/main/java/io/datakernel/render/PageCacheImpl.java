@@ -13,16 +13,12 @@ public class PageCacheImpl implements PageCache {
 	}
 
 	@Override
-	public ByteBuf get(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		return ringBuffer.get(getKey(sector, destination, doc));
+	public ByteBuf get(@NotNull String url) {
+		return ringBuffer.get(url.getBytes());
 	}
 
 	@Override
-	public void put(@NotNull String sector, @Nullable String destination, @NotNull String doc, ByteBuf pageView) {
-		ringBuffer.put(getKey(sector, destination, doc), pageView.getArray());
-	}
-
-	private byte[] getKey(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		return (sector + (destination != null ? destination : "") + doc).getBytes();
+	public void put(@NotNull String url, ByteBuf pageView) {
+		ringBuffer.put(url.getBytes(), pageView.getArray());
 	}
 }

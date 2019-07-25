@@ -36,15 +36,15 @@
           <li
             {{#active.core}}
             class="active"
-            {{/active.core}} ><a href="/core">Core</a></li>
+            {{/active.core}} ><a href="/docs/core">Core</a></li>
           <li
             {{#active.cloud}}
             class="active"
-            {{/active.cloud}}><a href="/cloud">Cloud</a></li>
+            {{/active.cloud}}><a href="/docs/cloud">Cloud</a></li>
           <li
             {{#active.global-cloud}}
             class="active"
-            {{/active.global-cloud}}><a href="/global-cloud">Global Cloud</a></li>
+            {{/active.global-cloud}}><a href="/docs/global-cloud">Global Cloud</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <li><a href="http://uikernel.io">UIKernel</a></li>
@@ -64,7 +64,7 @@
         <h3>{{key}}</h3>
         <ul class="" style="list-style: disc">
           {{#value}}
-          <li><a href="/{{page.pagePath}}/{{destPath}}/{{docPath}}">{{docTitle}}</a></li>
+          <li><a href="{{docPath}}">{{docTitle}}</a></li>
           {{/value}}
         </ul>
         <hr/>

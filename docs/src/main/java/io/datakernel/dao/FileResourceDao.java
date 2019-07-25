@@ -1,24 +1,34 @@
 package io.datakernel.dao;
 
-import org.jetbrains.annotations.NotNull;
-
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static java.lang.Integer.MAX_VALUE;
 import static java.nio.charset.Charset.defaultCharset;
+import static java.nio.file.Files.readAllBytes;
 
 public class FileResourceDao implements ResourceDao {
 	private final Path rootPath;
 
-	public FileResourceDao(Path rootPath) {
+	private FileResourceDao(Path rootPath) {
 		this.rootPath = rootPath;
 	}
 
-	@NotNull
+	public static FileResourceDao create(Path path) throws FileNotFoundException {
+		if (!Files.isDirectory(path)) {
+			throw new FileNotFoundException(path.toString());
+		}
+		return new FileResourceDao(path);
+	}
+
 	@Override
 	public String getResource(String resourceName) throws IOException {
-		Path resolvedPath = rootPath.resolve(resourceName);
-		return new String(Files.readAllBytes(resolvedPath), defaultCharset());
+		Path foundPath = Files.find(rootPath, MAX_VALUE,
+				(path, attributes) -> path.getFileName().toString().equals(resourceName))
+				.findFirst()
+				.orElseThrow(() -> new FileNotFoundException(resourceName));
+		return new String(readAllBytes(foundPath), defaultCharset());
 	}
 }

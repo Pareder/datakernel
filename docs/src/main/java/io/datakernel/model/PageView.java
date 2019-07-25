@@ -6,19 +6,13 @@ import java.util.*;
 public final class PageView {
     private final Map<String, List<Doc>> destinationToDocs = new HashMap<>();
     private final Map<String, String> properties;
-    private final String pagePath;
     private final String content;
 	private String renderedContent;
 
-	public PageView(String pagePath, String content, Map<String, String> properties) {
-		this.pagePath = pagePath;
+	public PageView(String content, Map<String, String> properties) {
 		this.content = content;
 		this.properties = properties;
 	}
-
-    public String getPagePath() {
-        return pagePath;
-    }
 
     public Set<Map.Entry<String, List<Doc>>> getDestinationToDocs() {
         return destinationToDocs.entrySet();
@@ -40,10 +34,10 @@ public final class PageView {
 		properties.put(key, value);
 	}
 
-	public void putSubParagraph(String docTitle, String docPath, String destTitle, String destPath) {
-        if (docTitle == null || docPath == null || destPath == null || destTitle == null) return;
+	public void putSubParagraph(String docTitle, String docPath, String destTitle) {
+        if (docTitle == null || docPath == null || destTitle == null) return;
         destinationToDocs.computeIfAbsent(destTitle, $ -> new ArrayList<>())
-                .add(new Doc(docTitle, docPath, destPath));
+                .add(new Doc(docTitle, docPath));
     }
 
 	public PageView setRenderedContent(String renderedContent) {

@@ -7,21 +7,20 @@ import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.data.MutableDataSet;
-import io.datakernel.dao.FilePageDao;
-import io.datakernel.dao.FileResourceDao;
-import io.datakernel.dao.PageDao;
-import io.datakernel.dao.ResourceDao;
+import io.datakernel.config.Config;
+import io.datakernel.dao.*;
+import io.datakernel.di.annotation.Named;
+import io.datakernel.di.annotation.Provides;
+import io.datakernel.di.module.AbstractModule;
 import io.datakernel.render.MustacheMarkdownPageRenderer;
 import io.datakernel.render.PageCache;
 import io.datakernel.render.PageCacheImpl;
 import io.datakernel.render.PageRenderer;
 import io.datakernel.tag.OrderedTagReplacer;
-import io.datakernel.config.Config;
-import io.datakernel.di.annotation.Named;
-import io.datakernel.di.annotation.Provides;
-import io.datakernel.di.module.AbstractModule;
 import org.python.util.PythonInterpreter;
 
+import java.io.FileNotFoundException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -31,8 +30,6 @@ import static com.vladsch.flexmark.parser.ParserEmulationProfile.GITHUB_DOC;
 import static io.datakernel.config.ConfigConverters.ofInteger;
 import static io.datakernel.config.ConfigConverters.ofPath;
 import static io.datakernel.tag.TagReplacers.*;
-import static io.datakernel.tag.TagReplacers.githubIncludeReplacer;
-import static io.datakernel.tag.TagReplacers.includeReplacer;
 import static java.util.Arrays.asList;
 
 @SuppressWarnings("unused")
@@ -54,14 +51,20 @@ public class RenderModule extends AbstractModule {
 
 	@Provides
 	@Named("projectSource")
-	ResourceDao projectSourceDao(@Named("properties") Config config) {
-		return new FileResourceDao(config.get(ofPath(), "projectSourceFile.path"));
+	ResourceDao projectSourceDao(@Named("properties") Config config) throws FileNotFoundException {
+		return FileResourceDao.create(config.get(ofPath(), "projectSourceFile.path"));
 	}
 
 	@Provides
 	@Named("includes")
-	ResourceDao includesDao(@Named("properties") Config config) {
-		return new FileResourceDao(config.get(ofPath(), "includes.path"));
+	ResourceDao includesDao(@Named("properties") Config config) throws FileNotFoundException {
+		return FileResourceDao.create(config.get(ofPath(), "includes.path"));
+	}
+
+	@Provides
+	@Named("template")
+	ResourceDao templateDao(@Named("properties") Config config) throws FileNotFoundException {
+		return FileResourceDao.create(config.get(ofPath(), "templates.path"));
 	}
 
 	@Override
@@ -92,9 +95,18 @@ public class RenderModule extends AbstractModule {
 	}
 
 	@Provides
+	ResourceResolver<String, Path> resourceResolver(@Named("properties") Config config) {
+		return UrlResourceResolver.create(config);
+	}
+
+	@Provides
 	PageRenderer render(List<OrderedTagReplacer> replacer, Executor executor, PageDao pageDao,
-						Parser parser, HtmlRenderer renderer, PageCache pageCache) {
-		return new MustacheMarkdownPageRenderer(replacer, pageDao, parser, renderer, executor, pageCache);
+						Parser parser, HtmlRenderer renderer, PageCache pageCache,
+						MustacheFactory mustache, @Named("template") ResourceDao templateDao,
+						ResourceResolver<String, Path> reourceResolver) {
+		return new MustacheMarkdownPageRenderer(
+				replacer, pageDao, parser, renderer, executor,
+				pageCache, mustache, templateDao, reourceResolver);
 	}
 
 	@Provides

@@ -1,10 +1,9 @@
 package io.datakernel.dao;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.stream.Stream;
 
 public interface ResourceDao {
-	@NotNull
 	String getResource(String resourceName) throws IOException;
 }

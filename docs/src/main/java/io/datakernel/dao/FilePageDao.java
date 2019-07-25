@@ -1,76 +1,66 @@
 package io.datakernel.dao;
 
-import io.datakernel.model.PageView;
 import io.datakernel.async.Promise;
-import io.datakernel.bytebuf.ByteBuf;
-import io.datakernel.bytebuf.ByteBufPool;
 import io.datakernel.bytebuf.ByteBufQueue;
-import io.datakernel.config.Config;
 import io.datakernel.csp.file.ChannelFileReader;
 import io.datakernel.di.annotation.Inject;
-import io.datakernel.di.annotation.Named;
-import io.datakernel.util.ApplicationSettings;
+import io.datakernel.model.PageView;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.channels.FileChannel;
-import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.datakernel.config.ConfigConverters.ofPath;
+import static java.lang.Integer.MAX_VALUE;
 import static java.nio.charset.Charset.defaultCharset;
-import static java.nio.file.FileVisitResult.CONTINUE;
-import static java.nio.file.FileVisitResult.SKIP_SUBTREE;
-import static java.nio.file.Files.walkFileTree;
-import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.Files.readAllBytes;
 import static java.util.regex.Pattern.DOTALL;
 
 public final class FilePageDao implements PageDao {
-	private static final String DEFAULT_TITLE = "unknown";
-	private static final String TITLE_REGEX = "title:\\s*(.+)";
-	private static final String DESTINATION_REGEX = "destination:\\s*(.+)";
+	private static final String DESTINATIONS_FILE = "destination.md";
 	private static final String PROPERTIES_BLOCK_REGEX = "---(.*)---";
 	private static final String PROPERTIES_REGEX = "([\\w-]+):\\s*([\\w-./]+)";
-	private static final int PROPERTIES_BLOCK_SIZE_LIMIT = ApplicationSettings.getInt(
-			FilePageDao.class, "propertiesBlockSize.limit", 1 << 8);
-	private final static String INDEX = "index";
-
+	private static final String DOC_PATTERN = "\\{\\{\\{((?<doc>[\\w-]+)\\s+path\\s*=\"(?<path>[\\w-]+(.[\\w]+)?)\"\\s+title\\s*=\"(?<title>.*?)\")/}}}";
+	private static final String DESTINATION_PATTERN = "\\{\\{(?<destination>[\\w-]+)\\s+title=\"(?<title>.*?)\"}}(?<inner>.+)\\{\\{/\\1}}";
+	private static final String SECTOR_PATTERN = "\\{(?<sector>[\\w-]+)}(?<inner>.+)\\{/\\1}";
+	private static final int MAX_DEPTH = 2;
 	private final Pattern propertiesBlockPattern = Pattern.compile(PROPERTIES_BLOCK_REGEX, DOTALL);
 	private final Pattern propertiesPattern = Pattern.compile(PROPERTIES_REGEX, DOTALL);
-	private final Pattern titlePattern = Pattern.compile(TITLE_REGEX);
-	private final Pattern destinationPattern = Pattern.compile(DESTINATION_REGEX);
+	private final Pattern docPattern = Pattern.compile(DOC_PATTERN, DOTALL);
+	private final Pattern destinationPattern = Pattern.compile(DESTINATION_PATTERN, DOTALL);
+	private final Pattern sectorPattern = Pattern.compile(SECTOR_PATTERN, DOTALL);
 
-	private static final String EMPTY = "";
-	private static final String DOT = ".";
-
-	private final Path path;
-	private final String extension;
+	private final ResourceResolver<String, Path> resourceResolver;
 	private final Executor executor;
 
 	@Inject
-	public FilePageDao(@Named("properties") Config config, Executor executor) {
+	public FilePageDao(Executor executor, ResourceResolver<String, Path> resourceResolver) {
 		this.executor = executor;
-		this.extension = config.get("sourceFile.extension");
-		this.path = config.get(ofPath(), "sourceFile.path");
+		this.resourceResolver = resourceResolver;
 	}
 
 	@Override
-	public Promise<PageView> loadPage(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		Path path = this.path.resolve(resolveResource(sector, destination, doc));
-			return ChannelFileReader.open(executor, path)
+	public Promise<PageView> loadPage(@NotNull String resource) {
+		try {
+			return loadPage(resourceResolver.resolve(resource));
+		} catch (IOException e) {
+			return Promise.ofException(e);
+		}
+	}
+
+	@Override
+	public Promise<PageView> loadPage(@NotNull Path resource) {
+		return ChannelFileReader.open(executor, resource)
 				.then(fileReader -> fileReader.toCollector(ByteBufQueue.collector()))
 				.then(buf -> Promise.ofBlockingCallable(executor, () -> {
 					String content = buf.asString(defaultCharset());
-					PageView pageView = new PageView(sector, content, parseProperties(content));
-					walkFileTree(this.path.resolve(sector), new PageVisitor(pageView));
+					PageView pageView = new PageView(content, parseProperties(content));
+					readDestinationsBar(pageView, resource, MAX_DEPTH);
 					return pageView;
 				}));
 	}
@@ -90,51 +80,32 @@ public final class FilePageDao implements PageDao {
 		return properties;
 	}
 
-	private String resolveResource(@NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		String resource = sector + "/" + (destination != null ? destination : "");
-		resource = !resource.isEmpty() ?
-				resource + "/" + doc + DOT + extension :
-				doc + "." + extension;
-		return resource;
-	}
+	private void readDestinationsBar(PageView pageView, Path resource, int maxDepth) throws IOException {
+		if (maxDepth == 0) return;
+		Path foundPath = Files.find(resource, MAX_VALUE,
+				(path, attributes) -> attributes.isRegularFile() && path.getFileName().toString().equals(DESTINATIONS_FILE))
+				.findFirst()
+				.orElse(null);
 
-	private final class PageVisitor extends SimpleFileVisitor<Path> {
-		private final PageView pageView;
-
-		PageVisitor(PageView pageView) {
-			this.pageView = pageView;
+		if (foundPath == null) {
+			readDestinationsBar(pageView, resource.getParent(), --maxDepth);
+			return;
 		}
-
-		@Override
-		public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) {
-			String destinationPath = path.getParent().getFileName().toString();
-			String docPath = path.getFileName().toString().replace(DOT + extension, EMPTY);
-			if (docPath.equals(INDEX)) {
-				return CONTINUE;
+		String content = new String(readAllBytes(foundPath), defaultCharset());
+		Matcher sectorMatch = sectorPattern.matcher(content);
+		while (sectorMatch.find()) {
+			String innerSector = sectorMatch.group("inner");
+			Matcher destinationMatch = destinationPattern.matcher(innerSector);
+			while (destinationMatch.find()) {
+				String destinationTitle = destinationMatch.group("title");
+				String innerDestination = destinationMatch.group("inner");
+				Matcher docMatch = docPattern.matcher(innerDestination);
+				while (docMatch.find()) {
+					String docTitle = docMatch.group("title");
+					String docPath = docMatch.group("path");
+					pageView.putSubParagraph(docTitle, docPath, destinationTitle);
+				}
 			}
-			ByteBuf buf = ByteBufPool.allocate(PROPERTIES_BLOCK_SIZE_LIMIT);
-			buf.tail(PROPERTIES_BLOCK_SIZE_LIMIT);
-			try {
-				FileChannel channel = FileChannel.open(path, READ);
-				channel.read(buf.toReadByteBuffer());
-			} catch (IOException e) {
-				return SKIP_SUBTREE;
-			}
-			String propsBlock = buf.asString(defaultCharset());
-			pageView.putSubParagraph(
-					findDocTitle(propsBlock), docPath,
-					findDestinationTitle(propsBlock), destinationPath);
-			return CONTINUE;
-		}
-
-		private String findDocTitle(String propsBlock) {
-			Matcher matcher = titlePattern.matcher(propsBlock);
-			return matcher.find() ? matcher.group(1) : DEFAULT_TITLE;
-		}
-
-		private String findDestinationTitle(String propsBlock) {
-			Matcher matcher = destinationPattern.matcher(propsBlock);
-			return matcher.find() ? matcher.group(1) : DEFAULT_TITLE;
 		}
 	}
 }

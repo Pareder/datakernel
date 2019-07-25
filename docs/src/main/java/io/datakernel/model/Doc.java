@@ -4,12 +4,10 @@ package io.datakernel.model;
 public final class Doc {
 	private final String title;
 	private final String path;
-	private final String destPath;
 
-	public Doc(String title, String path, String destPath) {
+	public Doc(String title, String docFilename) {
 		this.title = title;
-		this.path = path;
-		this.destPath = destPath;
+		this.path = docFilename;
 	}
 
 	public String getDocTitle() {
@@ -18,9 +16,5 @@ public final class Doc {
 
 	public String getDocPath() {
 		return path;
-	}
-
-	public String getDestPath() {
-		return destPath;
 	}
 }

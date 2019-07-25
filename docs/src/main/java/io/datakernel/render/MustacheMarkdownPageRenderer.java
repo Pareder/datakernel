@@ -1,19 +1,26 @@
 package io.datakernel.render;
 
 import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
 import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
-import io.datakernel.dao.PageDao;
-import io.datakernel.tag.OrderedTagReplacer;
-import io.datakernel.tag.TagReplacer;
 import io.datakernel.async.Promise;
 import io.datakernel.bytebuf.ByteBuf;
+import io.datakernel.dao.PageDao;
+import io.datakernel.dao.ResourceDao;
+import io.datakernel.dao.ResourceResolver;
 import io.datakernel.http.HttpException;
+import io.datakernel.model.PageView;
+import io.datakernel.tag.OrderedTagReplacer;
+import io.datakernel.tag.ReplaceException;
+import io.datakernel.tag.TagReplacer;
 import io.datakernel.writer.ByteBufWriter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -28,51 +35,78 @@ import static java.util.regex.Pattern.DOTALL;
 
 public class MustacheMarkdownPageRenderer implements PageRenderer {
 	private static final String TAG_PATTERN = "(\\{%\\s*highlight.*?%}\\n.*?\\n\\{%\\s*endhighlight\\s*%}|\\{%\\s*include.*?%}|\\{%\\s*github_sample.*?%})";
-	private final PageDao pageDao;
-	private final HtmlRenderer renderer;
-	private final Parser parser;
-	private final List<OrderedTagReplacer> replacers;
-	private final Executor executor;
-	private final PageCache pageCache;
 	private final Pattern tagPattern = Pattern.compile(TAG_PATTERN, DOTALL);
 
+	private final ResourceResolver<String, Path> resourceResolver;
+	private final List<OrderedTagReplacer> replacers;
+	private final MustacheFactory mustache;
+	private final ResourceDao templateDao;
+	private final HtmlRenderer renderer;
+	private final PageCache pageCache;
+	private final Executor executor;
+	private final PageDao pageDao;
+	private final Parser parser;
+
 	public MustacheMarkdownPageRenderer(List<OrderedTagReplacer> replacers, PageDao pageDao, Parser parser,
-										HtmlRenderer renderer, Executor executor, PageCache pageCache) {
+										HtmlRenderer renderer, Executor executor, PageCache pageCache,
+										MustacheFactory mustache, ResourceDao templateDao,
+										ResourceResolver<String, Path> resourceResolver) {
 		checkArgument(!replacers.isEmpty(), () -> "List replacers cannot be empty");
+		this.resourceResolver = resourceResolver;
+		this.templateDao = templateDao;
 		this.replacers = replacers;
-		this.pageDao = pageDao;
-		this.renderer = renderer;
-		this.parser = parser;
-		this.executor = executor;
 		this.pageCache = pageCache;
+		this.renderer = renderer;
+		this.mustache = mustache;
+		this.executor = executor;
+		this.pageDao = pageDao;
+		this.parser = parser;
 	}
 
-	public Promise<ByteBuf> render(Mustache page, @NotNull String sector, @Nullable String destination, @NotNull String doc) {
-		ByteBuf cachedPage = pageCache.get(sector, destination, doc);
-		return cachedPage != null ?
-				Promise.of(cachedPage) :
-				pageDao.loadPage(sector, destination, doc)
-						.then(pageView -> pageView == null ?
-								Promise.ofException(HttpException.badRequest400()) :
-								Promise.ofBlockingCallable(executor, () -> {
-									Queue<String> savedTags = new LinkedList<>();
-									String pageContent = pageView.getPageContent();
-									saveTags(pageContent, savedTags);
-									Document document = parser.parse(pageContent);
-									String renderedContent = renderer.render(document);
-									StringBuilder content = replaceToSavedTags(renderedContent, savedTags);
-									replacers.sort(comparingInt(OrderedTagReplacer::getOrder));
-									for (TagReplacer replacer : replacers) {
-										replacer.replace(content);
-									}
+	@Override
+	public Promise<ByteBuf> render(@NotNull String template, @NotNull String url) {
+		try {
+			Path resource = resourceResolver.resolve(url);
+			ByteBuf cachedPage = pageCache.get(resource.toString());
+			return cachedPage != null ?
+					Promise.of(cachedPage) :
+					pageDao.loadPage(resource)
+							.then(pageView -> pageView == null ?
+									Promise.ofException(HttpException.badRequest400()) :
+									Promise.ofBlockingCallable(executor, () -> {
+										StringBuilder content = doRender(pageView);
+										String replacedContent = replaceWithTags(content);
 
-									ByteBufWriter writer = new ByteBufWriter();
-									page.execute(writer, map(
-											"page", pageView.setRenderedContent(content.toString()),
-											"active", map(sector, true)));
-									return writer.getBuf();
-								}))
-						.whenResult(buf -> pageCache.put(sector, destination, doc, buf));
+										StringReader templateReader = new StringReader(templateDao.getResource(template));
+										Mustache mustache = this.mustache.compile(templateReader, template);
+										ByteBufWriter writer = new ByteBufWriter();
+
+										mustache.execute(writer, map(
+												"page", pageView.setRenderedContent(replacedContent),
+												"active", map(url, true)));
+										return writer.getBuf();
+									}))
+							.whenResult(buf -> pageCache.put(resource.toString(), buf));
+		} catch (IOException e) {
+			return Promise.ofException(e);
+		}
+	}
+
+	private String replaceWithTags(StringBuilder content) throws ReplaceException {
+		replacers.sort(comparingInt(OrderedTagReplacer::getOrder));
+		for (TagReplacer replacer : replacers) {
+			replacer.replace(content);
+		}
+		return content.toString();
+	}
+
+	private StringBuilder doRender(PageView pageView) {
+		Queue<String> savedTags = new LinkedList<>();
+		String pageContent = pageView.getPageContent();
+		saveTags(pageContent, savedTags);
+		Document document = parser.parse(pageContent);
+		String renderedContent = renderer.render(document);
+		return replaceToSavedTags(renderedContent, savedTags);
 	}
 
 	private StringBuilder replaceToSavedTags(String renderedContent, Queue<String> savedTags) {
