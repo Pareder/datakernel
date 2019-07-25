@@ -56,7 +56,7 @@ public final class GlobalTodoApp extends Launcher {
 	) {
 		return RoutingServlet.create()
 				.map("/ot/index/*", indexServlet)
-				.map("/ot/todo/:suffix/*", todoListServlet)
+				.map("/ot/list/:suffix/*", todoListServlet)
 				.map("/*", staticServlet);
 	}
 
